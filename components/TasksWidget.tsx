@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { Task, TaskPriority } from '../types';
 import { PlusIcon, TrashIcon } from './icons';
@@ -28,6 +28,14 @@ const TasksWidget: React.FC = () => {
   const [editingTaskText, setEditingTaskText] = useState('');
   const [editingDueDateTaskId, setEditingDueDateTaskId] = useState<string | null>(null);
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
+  const addTaskInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isAdding) {
+      addTaskInputRef.current?.focus();
+    }
+  }, [isAdding]);
 
   useEffect(() => {
     // One-time migration for tasks from older versions
@@ -59,6 +67,7 @@ const TasksWidget: React.FC = () => {
       setNewTaskText('');
       setNewPriority('medium');
       setNewDueDate('');
+      setIsAdding(false);
     }
   };
 
@@ -184,24 +193,42 @@ const TasksWidget: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full">
-      <form onSubmit={handleAddTask} className="flex flex-wrap items-center mb-3 gap-2">
-        <input
-          type="text"
-          value={newTaskText}
-          onChange={(e) => setNewTaskText(e.target.value)}
-          placeholder="Add a new task..."
-          className="flex-grow bg-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/50 min-w-[100px]"
-        />
-        <div className="flex items-center space-x-2">
-          {(['low', 'medium', 'high'] as TaskPriority[]).map((p) => (
-            <button key={p} type="button" onClick={() => setNewPriority(p)} className={`w-4 h-4 rounded-full ${priorityColors[p]} transition-all duration-200 ${newPriority === p ? 'ring-2 ring-offset-2 ring-offset-gray-800 ring-white/80' : 'opacity-40 hover:opacity-80'}`} aria-label={`Set priority to ${p}`} />
-          ))}
-        </div>
-        <input type="date" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)} className="bg-white/10 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-white/50" style={{colorScheme: 'dark'}} aria-label="Due date" />
-        <button type="submit" className="ml-auto p-2 rounded-full hover:bg-white/20 transition-colors">
-          <PlusIcon className="w-5 h-5" />
-        </button>
-      </form>
+      <div className="mb-3">
+        {isAdding ? (
+          <div className="p-3 bg-white/10 rounded-lg animate-[fadeIn_0.2s_ease-out]">
+            <form onSubmit={handleAddTask}>
+              <input
+                ref={addTaskInputRef}
+                type="text"
+                value={newTaskText}
+                onChange={(e) => setNewTaskText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Escape') setIsAdding(false); }}
+                placeholder="What needs to be done?"
+                className="w-full bg-transparent text-base focus:outline-none mb-2 placeholder-white/60"
+              />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center space-x-2">
+                    {(['low', 'medium', 'high'] as TaskPriority[]).map((p) => (
+                      <button key={p} type="button" onClick={() => setNewPriority(p)} className={`w-4 h-4 rounded-full ${priorityColors[p]} transition-all duration-200 ${newPriority === p ? 'ring-2 ring-offset-2 ring-offset-gray-800 ring-white/80' : 'opacity-40 hover:opacity-80'}`} aria-label={`Set priority to ${p}`} />
+                    ))}
+                  </div>
+                  <input type="date" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)} className="bg-white/10 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-white/50" style={{colorScheme: 'dark'}} aria-label="Due date" />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button type="button" onClick={() => setIsAdding(false)} className="px-3 py-1 rounded-md text-sm text-white/80 hover:bg-white/20 transition-colors">Cancel</button>
+                  <button type="submit" className="px-3 py-1 rounded-md text-sm bg-blue-500 hover:bg-blue-600 transition-colors font-semibold">Add Task</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        ) : (
+          <button onClick={() => setIsAdding(true)} className="flex items-center w-full p-2.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-sm text-white/80 hover:text-white">
+            <PlusIcon className="w-4 h-4 mr-2" />
+            Add a task
+          </button>
+        )}
+      </div>
       <div className="flex items-center justify-end space-x-3 mb-2 text-xs text-white/70">
           <span className="font-medium">Sort by:</span>
           <button onClick={() => setSortBy('manual')} className={`hover:text-white transition-colors ${sortBy === 'manual' ? 'text-white font-bold' : ''}`}>Manual</button>

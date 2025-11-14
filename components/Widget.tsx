@@ -16,11 +16,11 @@ const Widget: React.FC<WidgetProps> = ({ title, children, widgetId, size, onSize
   const MAX_SIZE = 3;
 
   return (
-    <div className="bg-black/20 backdrop-blur-md rounded-2xl p-4 text-white border border-white/20 shadow-lg h-full flex flex-col">
+    <div className="bg-black/20 backdrop-blur-md rounded-2xl p-4 text-white border border-white/20 shadow-lg h-full flex flex-col group">
       <div className="flex justify-between items-center mb-3">
         <h2 className="text-lg font-bold text-white/90">{title}</h2>
         {widgetId && typeof size !== 'undefined' && onSizeChange && (
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <button
               onClick={() => onSizeChange(widgetId, size - 1)}
               disabled={size <= MIN_SIZE}
