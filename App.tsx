@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { WidgetId, Widget, Quote, BackgroundSetting } from './types';
@@ -5,7 +6,7 @@ import fetchInspirationalQuote from './services/geminiService';
 import Clock from './components/Clock';
 import QuoteDisplay from './components/Quote';
 import SettingsPanel from './components/Settings';
-import WidgetComponentContainer from './components/Widget';
+import WidgetComponent from './components/Widget';
 import { SettingsIcon, ZenIcon } from './components/icons';
 
 const TasksWidget = lazy(() => import('./components/TasksWidget'));
@@ -114,6 +115,10 @@ const App: React.FC = () => {
     }));
   };
 
+  const handleCloseWidget = (idToRemove: WidgetId) => {
+    setWidgetOrder(prev => prev.filter(id => id !== idToRemove));
+  };
+
   const handleDragStart = (e: React.DragEvent, widgetId: WidgetId) => {
       setDraggedWidgetId(widgetId);
       e.dataTransfer.effectAllowed = 'move';
@@ -174,7 +179,7 @@ const App: React.FC = () => {
         {activeGridWidgets.length > 0 && (
           <div className={`w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-8 max-w-6xl transition-all duration-500 ease-out ${isFocusMode ? 'opacity-0 pointer-events-none translate-y-5' : 'opacity-100 translate-y-0'}`}>
             {activeGridWidgets.map((widget, index) => {
-                const WidgetComponent = widgetMap[widget.id];
+                const WidgetContent = widgetMap[widget.id];
                 const isBeingDragged = draggedWidgetId === widget.id;
                 const size = widgetSizes[widget.id] || 1;
                 const colSpanClass = {
@@ -194,16 +199,17 @@ const App: React.FC = () => {
                         className={`transition-opacity duration-300 cursor-move ${isBeingDragged ? 'opacity-30' : 'opacity-100'} ${colSpanClass}`}
                         style={{ animation: `fadeInUp 0.5s ease-out ${index * 100}ms forwards`, opacity: 0 }}
                     >
-                        <WidgetComponentContainer
+                        <WidgetComponent
                             title={widget.name}
                             widgetId={widget.id}
                             size={size}
                             onSizeChange={handleSizeChange}
+                            onClose={handleCloseWidget}
                         >
                             <Suspense fallback={<div className="bg-black/20 backdrop-blur-md rounded-2xl p-4 animate-pulse h-48"></div>}>
-                                <WidgetComponent />
+                                <WidgetContent />
                             </Suspense>
-                        </WidgetComponentContainer>
+                        </WidgetComponent>
                     </div>
                 )
             })}
