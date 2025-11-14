@@ -1,0 +1,7 @@
+{
+  "name": "Zenith Tab",
+  "description": "A minimalist and customizable new tab page with stunning backgrounds, inspiring quotes, and useful widgets to help you focus and stay organized. Everything you need is just one click away.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
