@@ -35,6 +35,7 @@ const App: React.FC = () => {
   
   const [enabledWidgets, setEnabledWidgets] = useLocalStorage<WidgetId[]>('enabled_widgets', ['quote', 'tasks']);
   const [backgroundSetting, setBackgroundSetting] = useLocalStorage<BackgroundSetting>('background_setting', { type: 'random' });
+  const [draggedWidgetId, setDraggedWidgetId] = useState<WidgetId | null>(null);
 
   useEffect(() => {
     // Set background based on user setting
@@ -62,8 +63,48 @@ const App: React.FC = () => {
   }, [backgroundSetting]); // Re-run only when background setting changes to update background instantly. Initial load is also covered.
 
   const activeWidgets = useMemo(() => {
-    return allWidgets.filter(w => enabledWidgets.includes(w.id) && w.id !== 'quote');
+    return enabledWidgets
+      .map(id => allWidgets.find(w => w.id === id))
+      .filter((w): w is Widget => !!w && w.id !== 'quote');
   }, [enabledWidgets]);
+
+  const handleDragStart = (e: React.DragEvent, widgetId: WidgetId) => {
+      setDraggedWidgetId(widgetId);
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', widgetId);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+      e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent, targetWidgetId: WidgetId) => {
+      e.preventDefault();
+      const draggedId = e.dataTransfer.getData('text/plain') as WidgetId;
+      setDraggedWidgetId(null);
+
+      if (!draggedId || draggedId === targetWidgetId) return;
+
+      setEnabledWidgets(currentEnabled => {
+          const draggableWidgets = currentEnabled.filter(id => id !== 'quote');
+          const nonDraggableWidgets = currentEnabled.filter(id => id === 'quote');
+          
+          const draggedIndex = draggableWidgets.indexOf(draggedId);
+          const targetIndex = draggableWidgets.indexOf(targetWidgetId);
+
+          if (draggedIndex === -1 || targetIndex === -1) return currentEnabled;
+
+          const reordered = [...draggableWidgets];
+          const [removed] = reordered.splice(draggedIndex, 1);
+          reordered.splice(targetIndex, 0, removed);
+
+          return [...nonDraggableWidgets, ...reordered];
+      });
+  };
+
+  const handleDragEnd = () => {
+      setDraggedWidgetId(null);
+  };
 
   return (
     <main className="relative w-screen h-screen overflow-hidden text-white font-sans">
@@ -83,10 +124,21 @@ const App: React.FC = () => {
           <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-8 max-w-6xl">
             {activeWidgets.map(widget => {
                 const WidgetComponent = widgetMap[widget.id];
+                const isBeingDragged = draggedWidgetId === widget.id;
                 return (
-                    <Suspense key={widget.id} fallback={<div className="bg-black/20 backdrop-blur-md rounded-2xl p-4 animate-pulse h-48"></div>}>
-                        <WidgetComponent />
-                    </Suspense>
+                    <div
+                        key={widget.id}
+                        draggable="true"
+                        onDragStart={(e) => handleDragStart(e, widget.id)}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, widget.id)}
+                        onDragEnd={handleDragEnd}
+                        className={`transition-opacity duration-300 cursor-move ${isBeingDragged ? 'opacity-30' : 'opacity-100'}`}
+                    >
+                        <Suspense fallback={<div className="bg-black/20 backdrop-blur-md rounded-2xl p-4 animate-pulse h-48"></div>}>
+                            <WidgetComponent />
+                        </Suspense>
+                    </div>
                 )
             })}
           </div>
