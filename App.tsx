@@ -30,18 +30,23 @@ const widgetMap: Record<WidgetId, React.LazyExoticComponent<React.FC<{}>>> = {
 
 
 const App: React.FC = () => {
-  const [bgUrl, setBgUrl] = useState('');
+  const [bg1, setBg1] = useState('');
+  const [bg2, setBg2] = useState('');
+  const [activeBg, setActiveBg] = useState<'bg1' | 'bg2'>('bg1');
+  const [isInitialBgLoaded, setIsInitialBgLoaded] = useState(false);
+
   const [quoteData, setQuoteData] = useState<Quote | null>(null);
   const [isQuoteLoading, setIsQuoteLoading] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
   
   const [widgetOrder, setWidgetOrder] = useLocalStorage<WidgetId[]>('widget_order', ['quote', 'tasks']);
-  // FIX: Added 'quote' to the initial widgetSizes to match the Record<WidgetId, number> type.
   const [widgetSizes, setWidgetSizes] = useLocalStorage<Record<WidgetId, number>>('widget_sizes', { tasks: 1, notes: 1, weather: 1, quote: 1 });
   const [backgroundSetting, setBackgroundSetting] = useLocalStorage<BackgroundSetting>('background_setting', { type: 'random' });
   const [clockFormat, setClockFormat] = useLocalStorage<'12h' | '24h'>('clock_format', '12h');
   const [draggedWidgetId, setDraggedWidgetId] = useState<WidgetId | null>(null);
+  const [exitingWidgetIds, setExitingWidgetIds] = useState<Set<WidgetId>>(new Set());
+
 
   useEffect(() => {
     // One-time migration from old 'enabled_widgets' key
@@ -60,15 +65,28 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Set background based on user setting
+    let newUrl = '';
     if (backgroundSetting.type === 'random') {
       const width = window.innerWidth;
       const height = window.innerHeight;
-      setBgUrl(`https://picsum.photos/${width}/${height}?grayscale&blur=2`);
+      newUrl = `https://picsum.photos/${width}/${height}?grayscale&blur=2&t=${Date.now()}`;
     } else if (backgroundSetting.type === 'custom') {
-      setBgUrl(backgroundSetting.dataUrl);
+      newUrl = backgroundSetting.dataUrl;
     } else { // gallery
-      setBgUrl(backgroundSetting.url);
+      newUrl = backgroundSetting.url;
+    }
+
+    if (!newUrl) return;
+
+    if (!isInitialBgLoaded) {
+      setBg1(newUrl);
+      setIsInitialBgLoaded(true);
+    } else {
+      if (activeBg === 'bg1') {
+        if (newUrl !== bg2) { setBg2(newUrl); setActiveBg('bg2'); }
+      } else {
+        if (newUrl !== bg1) { setBg1(newUrl); setActiveBg('bg1'); }
+      }
     }
   }, [backgroundSetting]); 
 
@@ -116,7 +134,15 @@ const App: React.FC = () => {
   };
 
   const handleCloseWidget = (idToRemove: WidgetId) => {
-    setWidgetOrder(prev => prev.filter(id => id !== idToRemove));
+    setExitingWidgetIds(prev => new Set(prev).add(idToRemove));
+    setTimeout(() => {
+      setWidgetOrder(prev => prev.filter(id => id !== idToRemove));
+      setExitingWidgetIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(idToRemove);
+        return newSet;
+      });
+    }, 300); // Corresponds to fadeOut animation duration
   };
 
   const handleDragStart = (e: React.DragEvent, widgetId: WidgetId) => {
@@ -161,7 +187,11 @@ const App: React.FC = () => {
     <main className="relative w-screen h-screen overflow-hidden text-white font-sans">
       <div 
         className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000" 
-        style={{ backgroundImage: `url(${bgUrl})`, opacity: bgUrl ? 1 : 0 }}
+        style={{ backgroundImage: `url(${bg1})`, opacity: activeBg === 'bg1' ? 1 : 0 }}
+      />
+      <div 
+        className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000" 
+        style={{ backgroundImage: `url(${bg2})`, opacity: activeBg === 'bg2' ? 1 : 0 }}
       />
       <div className="absolute inset-0 bg-black/40" />
       
@@ -181,6 +211,7 @@ const App: React.FC = () => {
             {activeGridWidgets.map((widget, index) => {
                 const WidgetContent = widgetMap[widget.id];
                 const isBeingDragged = draggedWidgetId === widget.id;
+                const isExiting = exitingWidgetIds.has(widget.id);
                 const size = widgetSizes[widget.id] || 1;
                 const colSpanClass = {
                     1: 'col-span-1',
@@ -191,13 +222,13 @@ const App: React.FC = () => {
                 return (
                     <div
                         key={widget.id}
-                        draggable="true"
+                        draggable={!isExiting}
                         onDragStart={(e) => handleDragStart(e, widget.id)}
                         onDragOver={handleDragOver}
                         onDrop={(e) => handleDrop(e, widget.id)}
                         onDragEnd={handleDragEnd}
-                        className={`transition-opacity duration-300 cursor-move ${isBeingDragged ? 'opacity-30' : 'opacity-100'} ${colSpanClass}`}
-                        style={{ animation: `fadeInUp 0.5s ease-out ${index * 100}ms forwards`, opacity: 0 }}
+                        className={`transition-all duration-300 ease-in-out ${isExiting ? 'animate-fadeOut pointer-events-none' : ''} ${isBeingDragged ? 'opacity-30' : 'opacity-100'} ${colSpanClass} ${!isExiting ? 'cursor-move' : ''}`}
+                        style={{ animation: !isExiting ? `fadeInUp 0.5s ease-out ${index * 100}ms forwards` : undefined, opacity: 0 }}
                     >
                         <WidgetComponent
                             title={widget.name}
