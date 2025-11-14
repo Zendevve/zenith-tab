@@ -29,7 +29,12 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     if (enabledWidgets.includes(id)) {
       setEnabledWidgets(enabledWidgets.filter((wId) => wId !== id));
     } else {
-      setEnabledWidgets([...enabledWidgets, id]);
+      // Add non-quote widgets to the end, quote to the beginning
+      if (id === 'quote') {
+        setEnabledWidgets([id, ...enabledWidgets]);
+      } else {
+        setEnabledWidgets([...enabledWidgets, id]);
+      }
     }
   };
 

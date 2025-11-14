@@ -1,7 +1,7 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { Task, TaskPriority } from '../types';
-import Widget from './Widget';
 import { PlusIcon, TrashIcon } from './icons';
 
 type SortBy = 'priority' | 'dueDate' | 'createdAt' | 'manual';
@@ -183,121 +183,119 @@ const TasksWidget: React.FC = () => {
   }, [tasks, sortBy]);
 
   return (
-    <Widget title="Tasks">
-      <div className="flex flex-col h-full">
-        <form onSubmit={handleAddTask} className="flex flex-wrap items-center mb-3 gap-2">
-          <input
-            type="text"
-            value={newTaskText}
-            onChange={(e) => setNewTaskText(e.target.value)}
-            placeholder="Add a new task..."
-            className="flex-grow bg-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/50 min-w-[100px]"
-          />
-          <div className="flex items-center space-x-2">
-            {(['low', 'medium', 'high'] as TaskPriority[]).map((p) => (
-              <button key={p} type="button" onClick={() => setNewPriority(p)} className={`w-4 h-4 rounded-full ${priorityColors[p]} transition-all duration-200 ${newPriority === p ? 'ring-2 ring-offset-2 ring-offset-gray-800 ring-white/80' : 'opacity-40 hover:opacity-80'}`} aria-label={`Set priority to ${p}`} />
-            ))}
-          </div>
-          <input type="date" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)} className="bg-white/10 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-white/50" style={{colorScheme: 'dark'}} aria-label="Due date" />
-          <button type="submit" className="ml-auto p-2 rounded-full hover:bg-white/20 transition-colors">
-            <PlusIcon className="w-5 h-5" />
-          </button>
-        </form>
-        <div className="flex items-center justify-end space-x-3 mb-2 text-xs text-white/70">
-            <span className="font-medium">Sort by:</span>
-            <button onClick={() => setSortBy('manual')} className={`hover:text-white transition-colors ${sortBy === 'manual' ? 'text-white font-bold' : ''}`}>Manual</button>
-            <button onClick={() => setSortBy('priority')} className={`hover:text-white transition-colors ${sortBy === 'priority' ? 'text-white font-bold' : ''}`}>Priority</button>
-            <button onClick={() => setSortBy('dueDate')} className={`hover:text-white transition-colors ${sortBy === 'dueDate' ? 'text-white font-bold' : ''}`}>Due Date</button>
-            <button onClick={() => setSortBy('createdAt')} className={`hover:text-white transition-colors ${sortBy === 'createdAt' ? 'text-white font-bold' : ''}`}>Newest</button>
-        </div>
-        <ul className="space-y-2 overflow-y-auto flex-grow pr-1">
-          {sortedTasks.map((task) => {
-            const isBeingDragged = draggedTaskId === task.id;
-            return (
-              <li 
-                key={task.id} 
-                className={`flex items-center group bg-white/5 p-2 rounded-lg transition-all duration-200 ${isBeingDragged ? 'opacity-30' : 'opacity-100'}`}
-                draggable={!task.completed}
-                onDragStart={(e) => handleDragStart(e, task.id)}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, task)}
-                onDragEnd={handleDragEnd}
-              >
-              <button onClick={() => changePriority(task.id)} className={`w-2 h-6 rounded-full mr-3 cursor-pointer transition-all duration-200 group-hover:scale-110 flex-shrink-0 ${priorityColors[task.priority]}`} aria-label={`Current priority: ${task.priority}. Click to change.`} />
-              <input type="checkbox" checked={task.completed} onChange={() => toggleTask(task.id)} className="mr-3 h-4 w-4 rounded bg-white/20 border-white/30 text-blue-400 focus:ring-blue-400 flex-shrink-0" />
-              <div className="flex-grow">
-                {editingTaskId === task.id ? (
-                  <input
-                    type="text"
-                    value={editingTaskText}
-                    onChange={(e) => setEditingTaskText(e.target.value)}
-                    onBlur={handleSaveEdit}
-                    onKeyDown={handleEditKeyDown}
-                    className="w-full bg-white/20 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
-                    autoFocus
-                  />
-                ) : (
-                  <>
-                    <span
-                      className={`text-sm transition-all duration-300 ${task.completed ? 'line-through text-white/50' : 'cursor-pointer'}`}
-                      onClick={() => handleStartEditing(task)}
-                    >
-                      {task.text}
-                    </span>
-                    <div className="mt-1 h-5"> {/* Fixed height container to prevent layout shift */}
-                      {editingDueDateTaskId === task.id ? (
-                        <input
-                          type="date"
-                          value={task.dueDate || ''}
-                          onChange={(e) => {
-                            setTasks(tasks.map(t => t.id === task.id ? { ...t, dueDate: e.target.value || null } : t));
-                          }}
-                          onBlur={() => setEditingDueDateTaskId(null)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === 'Escape') {
-                              setEditingDueDateTaskId(null);
-                            }
-                          }}
-                          className="bg-white/20 rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-2 focus:ring-white/50"
-                          style={{colorScheme: 'dark'}}
-                          autoFocus
-                        />
-                      ) : (
-                        !task.completed && (
-                          task.dueDate ? (
-                            <div
-                              role="button"
-                              tabIndex={0}
-                              aria-label={`Change due date for ${task.text}`}
-                              onClick={() => { if (!task.completed) setEditingDueDateTaskId(task.id); }}
-                              onKeyDown={(e) => { if (e.key === 'Enter' && !task.completed) setEditingDueDateTaskId(task.id); }}
-                              className="text-xs text-amber-400/80 cursor-pointer hover:text-amber-300 w-fit"
-                            >
-                              Due: {new Date(task.dueDate + 'T00:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => { if (!task.completed) setEditingDueDateTaskId(task.id); }}
-                              className="text-xs text-white/50 opacity-0 group-hover:opacity-100 hover:text-white transition-opacity"
-                              aria-label={`Add due date for ${task.text}`}
-                            >
-                              Add due date
-                            </button>
-                          )
-                        )
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-              <button onClick={() => deleteTask(task.id)} className="ml-2 p-1 rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-500/50 transition-all" aria-label={`Delete task: ${task.text}`}>
-                <TrashIcon className="w-4 h-4 text-white/70" />
-              </button>
-            </li>
+    <div className="flex flex-col h-full">
+      <form onSubmit={handleAddTask} className="flex flex-wrap items-center mb-3 gap-2">
+        <input
+          type="text"
+          value={newTaskText}
+          onChange={(e) => setNewTaskText(e.target.value)}
+          placeholder="Add a new task..."
+          className="flex-grow bg-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/50 min-w-[100px]"
+        />
+        <div className="flex items-center space-x-2">
+          {(['low', 'medium', 'high'] as TaskPriority[]).map((p) => (
+            <button key={p} type="button" onClick={() => setNewPriority(p)} className={`w-4 h-4 rounded-full ${priorityColors[p]} transition-all duration-200 ${newPriority === p ? 'ring-2 ring-offset-2 ring-offset-gray-800 ring-white/80' : 'opacity-40 hover:opacity-80'}`} aria-label={`Set priority to ${p}`} />
           ))}
-        </ul>
+        </div>
+        <input type="date" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)} className="bg-white/10 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-white/50" style={{colorScheme: 'dark'}} aria-label="Due date" />
+        <button type="submit" className="ml-auto p-2 rounded-full hover:bg-white/20 transition-colors">
+          <PlusIcon className="w-5 h-5" />
+        </button>
+      </form>
+      <div className="flex items-center justify-end space-x-3 mb-2 text-xs text-white/70">
+          <span className="font-medium">Sort by:</span>
+          <button onClick={() => setSortBy('manual')} className={`hover:text-white transition-colors ${sortBy === 'manual' ? 'text-white font-bold' : ''}`}>Manual</button>
+          <button onClick={() => setSortBy('priority')} className={`hover:text-white transition-colors ${sortBy === 'priority' ? 'text-white font-bold' : ''}`}>Priority</button>
+          <button onClick={() => setSortBy('dueDate')} className={`hover:text-white transition-colors ${sortBy === 'dueDate' ? 'text-white font-bold' : ''}`}>Due Date</button>
+          <button onClick={() => setSortBy('createdAt')} className={`hover:text-white transition-colors ${sortBy === 'createdAt' ? 'text-white font-bold' : ''}`}>Newest</button>
       </div>
-    </Widget>
+      <ul className="space-y-2 overflow-y-auto flex-grow pr-1">
+        {sortedTasks.map((task) => {
+          const isBeingDragged = draggedTaskId === task.id;
+          return (
+            <li 
+              key={task.id} 
+              className={`flex items-center group bg-white/5 p-2 rounded-lg transition-all duration-200 ${isBeingDragged ? 'opacity-30' : 'opacity-100'}`}
+              draggable={!task.completed}
+              onDragStart={(e) => handleDragStart(e, task.id)}
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, task)}
+              onDragEnd={handleDragEnd}
+            >
+            <button onClick={() => changePriority(task.id)} className={`w-2 h-6 rounded-full mr-3 cursor-pointer transition-all duration-200 group-hover:scale-110 flex-shrink-0 ${priorityColors[task.priority]}`} aria-label={`Current priority: ${task.priority}. Click to change.`} />
+            <input type="checkbox" checked={task.completed} onChange={() => toggleTask(task.id)} className="mr-3 h-4 w-4 rounded bg-white/20 border-white/30 text-blue-400 focus:ring-blue-400 flex-shrink-0" />
+            <div className="flex-grow">
+              {editingTaskId === task.id ? (
+                <input
+                  type="text"
+                  value={editingTaskText}
+                  onChange={(e) => setEditingTaskText(e.target.value)}
+                  onBlur={handleSaveEdit}
+                  onKeyDown={handleEditKeyDown}
+                  className="w-full bg-white/20 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
+                  autoFocus
+                />
+              ) : (
+                <>
+                  <span
+                    className={`text-sm transition-all duration-300 ${task.completed ? 'line-through text-white/50' : 'cursor-pointer'}`}
+                    onClick={() => handleStartEditing(task)}
+                  >
+                    {task.text}
+                  </span>
+                  <div className="mt-1 h-5"> {/* Fixed height container to prevent layout shift */}
+                    {editingDueDateTaskId === task.id ? (
+                      <input
+                        type="date"
+                        value={task.dueDate || ''}
+                        onChange={(e) => {
+                          setTasks(tasks.map(t => t.id === task.id ? { ...t, dueDate: e.target.value || null } : t));
+                        }}
+                        onBlur={() => setEditingDueDateTaskId(null)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === 'Escape') {
+                            setEditingDueDateTaskId(null);
+                          }
+                        }}
+                        className="bg-white/20 rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-2 focus:ring-white/50"
+                        style={{colorScheme: 'dark'}}
+                        autoFocus
+                      />
+                    ) : (
+                      !task.completed && (
+                        task.dueDate ? (
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            aria-label={`Change due date for ${task.text}`}
+                            onClick={() => { if (!task.completed) setEditingDueDateTaskId(task.id); }}
+                            onKeyDown={(e) => { if (e.key === 'Enter' && !task.completed) setEditingDueDateTaskId(task.id); }}
+                            className="text-xs text-amber-400/80 cursor-pointer hover:text-amber-300 w-fit"
+                          >
+                            Due: {new Date(task.dueDate + 'T00:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => { if (!task.completed) setEditingDueDateTaskId(task.id); }}
+                            className="text-xs text-white/50 opacity-0 group-hover:opacity-100 hover:text-white transition-opacity"
+                            aria-label={`Add due date for ${task.text}`}
+                          >
+                            Add due date
+                          </button>
+                        )
+                      )
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+            <button onClick={() => deleteTask(task.id)} className="ml-2 p-1 rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-500/50 transition-all" aria-label={`Delete task: ${task.text}`}>
+              <TrashIcon className="w-4 h-4 text-white/70" />
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 };
 

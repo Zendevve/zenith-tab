@@ -6,6 +6,7 @@ import fetchInspirationalQuote from './services/geminiService';
 import Clock from './components/Clock';
 import QuoteDisplay from './components/Quote';
 import SettingsPanel from './components/Settings';
+import WidgetComponentContainer from './components/Widget';
 import { SettingsIcon } from './components/icons';
 
 const TasksWidget = lazy(() => import('./components/TasksWidget'));
@@ -33,9 +34,27 @@ const App: React.FC = () => {
   const [isQuoteLoading, setIsQuoteLoading] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
-  const [enabledWidgets, setEnabledWidgets] = useLocalStorage<WidgetId[]>('enabled_widgets', ['quote', 'tasks']);
+  const [widgetOrder, setWidgetOrder] = useLocalStorage<WidgetId[]>('widget_order', ['quote', 'tasks']);
+  // FIX: Added 'quote' to the initial widgetSizes to match the Record<WidgetId, number> type.
+  const [widgetSizes, setWidgetSizes] = useLocalStorage<Record<WidgetId, number>>('widget_sizes', { tasks: 1, notes: 1, weather: 1, quote: 1 });
   const [backgroundSetting, setBackgroundSetting] = useLocalStorage<BackgroundSetting>('background_setting', { type: 'random' });
   const [draggedWidgetId, setDraggedWidgetId] = useState<WidgetId | null>(null);
+
+  useEffect(() => {
+    // One-time migration from old 'enabled_widgets' key
+    try {
+        const oldEnabledRaw = localStorage.getItem('enabled_widgets');
+        if (oldEnabledRaw) {
+            const oldEnabled = JSON.parse(oldEnabledRaw);
+            if (Array.isArray(oldEnabled)) {
+                setWidgetOrder(oldEnabled);
+                localStorage.removeItem('enabled_widgets');
+            }
+        }
+    } catch (e) {
+        console.error("Failed to migrate old widget settings", e);
+    }
+  }, []);
 
   useEffect(() => {
     // Set background based on user setting
@@ -48,9 +67,11 @@ const App: React.FC = () => {
     } else { // gallery
       setBgUrl(backgroundSetting.url);
     }
-    
+  }, [backgroundSetting]); 
+
+  useEffect(() => {
     // Fetch quote only if the widget is enabled
-    if (enabledWidgets.includes('quote')) {
+    if (widgetOrder.includes('quote')) {
       setIsQuoteLoading(true);
       fetchInspirationalQuote().then(data => {
         setQuoteData(data);
@@ -60,13 +81,20 @@ const App: React.FC = () => {
         setQuoteData(null);
         setIsQuoteLoading(false);
     }
-  }, [backgroundSetting]); // Re-run only when background setting changes to update background instantly. Initial load is also covered.
+  }, [widgetOrder]);
 
-  const activeWidgets = useMemo(() => {
-    return enabledWidgets
+  const activeGridWidgets = useMemo(() => {
+    return widgetOrder
       .map(id => allWidgets.find(w => w.id === id))
       .filter((w): w is Widget => !!w && w.id !== 'quote');
-  }, [enabledWidgets]);
+  }, [widgetOrder]);
+  
+  const handleSizeChange = (id: WidgetId, newSize: number) => {
+    setWidgetSizes(prev => ({
+        ...prev,
+        [id]: Math.max(1, Math.min(3, newSize))
+    }));
+  };
 
   const handleDragStart = (e: React.DragEvent, widgetId: WidgetId) => {
       setDraggedWidgetId(widgetId);
@@ -85,14 +113,14 @@ const App: React.FC = () => {
 
       if (!draggedId || draggedId === targetWidgetId) return;
 
-      setEnabledWidgets(currentEnabled => {
-          const draggableWidgets = currentEnabled.filter(id => id !== 'quote');
-          const nonDraggableWidgets = currentEnabled.filter(id => id === 'quote');
+      setWidgetOrder(currentOrder => {
+          const draggableWidgets = currentOrder.filter(id => id !== 'quote');
+          const nonDraggableWidgets = currentOrder.filter(id => id === 'quote');
           
           const draggedIndex = draggableWidgets.indexOf(draggedId);
           const targetIndex = draggableWidgets.indexOf(targetWidgetId);
 
-          if (draggedIndex === -1 || targetIndex === -1) return currentEnabled;
+          if (draggedIndex === -1 || targetIndex === -1) return currentOrder;
 
           const reordered = [...draggableWidgets];
           const [removed] = reordered.splice(draggedIndex, 1);
@@ -114,17 +142,24 @@ const App: React.FC = () => {
       />
       <div className="absolute inset-0 bg-black/40" />
       
-      <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-4 md:p-8">
+      <div className="relative z-10 w-full h-full flex flex-col items-center p-4 md:p-8">
         <div className="flex flex-col items-center justify-center space-y-6 flex-grow text-center">
             <Clock />
-            {enabledWidgets.includes('quote') && <QuoteDisplay quoteData={quoteData} isLoading={isQuoteLoading} />}
+            {widgetOrder.includes('quote') && <QuoteDisplay quoteData={quoteData} isLoading={isQuoteLoading} />}
         </div>
         
-        {activeWidgets.length > 0 && (
+        {activeGridWidgets.length > 0 && (
           <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-8 max-w-6xl">
-            {activeWidgets.map(widget => {
+            {activeGridWidgets.map(widget => {
                 const WidgetComponent = widgetMap[widget.id];
                 const isBeingDragged = draggedWidgetId === widget.id;
+                const size = widgetSizes[widget.id] || 1;
+                const colSpanClass = {
+                    1: 'col-span-1',
+                    2: 'md:col-span-2 lg:col-span-2 col-span-1',
+                    3: 'md:col-span-2 lg:col-span-3 col-span-1',
+                }[size] || 'col-span-1';
+
                 return (
                     <div
                         key={widget.id}
@@ -133,11 +168,18 @@ const App: React.FC = () => {
                         onDragOver={handleDragOver}
                         onDrop={(e) => handleDrop(e, widget.id)}
                         onDragEnd={handleDragEnd}
-                        className={`transition-opacity duration-300 cursor-move ${isBeingDragged ? 'opacity-30' : 'opacity-100'}`}
+                        className={`transition-opacity duration-300 cursor-move ${isBeingDragged ? 'opacity-30' : 'opacity-100'} ${colSpanClass}`}
                     >
-                        <Suspense fallback={<div className="bg-black/20 backdrop-blur-md rounded-2xl p-4 animate-pulse h-48"></div>}>
-                            <WidgetComponent />
-                        </Suspense>
+                        <WidgetComponentContainer
+                            title={widget.name}
+                            widgetId={widget.id}
+                            size={size}
+                            onSizeChange={handleSizeChange}
+                        >
+                            <Suspense fallback={<div className="bg-black/20 backdrop-blur-md rounded-2xl p-4 animate-pulse h-48"></div>}>
+                                <WidgetComponent />
+                            </Suspense>
+                        </WidgetComponentContainer>
                     </div>
                 )
             })}
@@ -157,8 +199,8 @@ const App: React.FC = () => {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         allWidgets={allWidgets}
-        enabledWidgets={enabledWidgets}
-        setEnabledWidgets={setEnabledWidgets}
+        enabledWidgets={widgetOrder}
+        setEnabledWidgets={setWidgetOrder}
         backgroundSetting={backgroundSetting}
         setBackgroundSetting={setBackgroundSetting}
       />

@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchWeatherData } from '../services/weatherService';
 import { WeatherData } from '../types';
-import Widget from './Widget';
 import { SunIcon, CloudIcon, RainIcon, SnowIcon, WindIcon, StormIcon, PartlyCloudyIcon, FogIcon } from './icons';
 
 const weatherIcons: Record<WeatherData['icon'], React.ReactNode> = {
@@ -37,22 +36,28 @@ const WeatherWidget: React.FC = () => {
     loadWeather();
   }, []);
 
-  return (
-    <Widget title="Weather">
-      {loading && <p className="text-sm text-white/70">Loading weather...</p>}
-      {error && <p className="text-sm text-red-400">{error}</p>}
-      {weather && (
-        <div className="flex items-center space-x-4">
-          <div className="text-4xl">{weatherIcons[weather.icon] || <CloudIcon />}</div>
-          <div>
-            <p className="text-2xl font-bold">{weather.temperature}°C</p>
-            <p className="text-sm text-white/80">{weather.description}</p>
-            <p className="text-xs text-white/60">{weather.location}</p>
-          </div>
+  if (loading) {
+    return <p className="text-sm text-white/70">Loading weather...</p>;
+  }
+  
+  if (error) {
+    return <p className="text-sm text-red-400">{error}</p>;
+  }
+
+  if (weather) {
+    return (
+      <div className="flex items-center space-x-4">
+        <div className="text-4xl">{weatherIcons[weather.icon] || <CloudIcon />}</div>
+        <div>
+          <p className="text-2xl font-bold">{weather.temperature}°C</p>
+          <p className="text-sm text-white/80">{weather.description}</p>
+          <p className="text-xs text-white/60">{weather.location}</p>
         </div>
-      )}
-    </Widget>
-  );
+      </div>
+    );
+  }
+
+  return null;
 };
 
 export default WeatherWidget;
