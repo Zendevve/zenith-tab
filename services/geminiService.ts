@@ -2,7 +2,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Quote } from '../types';
 
-const fetchInspirationalQuote = async (): Promise<Quote> => {
+export const fetchInspirationalQuote = async (): Promise<Quote> => {
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
     const response = await ai.models.generateContent({
@@ -40,4 +40,24 @@ const fetchInspirationalQuote = async (): Promise<Quote> => {
   }
 };
 
-export default fetchInspirationalQuote;
+export const fetchComplexResponse = async (prompt: string): Promise<string> => {
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-pro",
+      contents: prompt,
+      config: {
+        thinkingConfig: {
+          thinkingBudget: 32768,
+        },
+      },
+    });
+    return response.text;
+  } catch (error) {
+    console.error("Failed to fetch complex response from Gemini:", error);
+    if (error instanceof Error) {
+      return `An error occurred while processing your request. Please try again.\n\nDetails: ${error.message}`;
+    }
+    return "An unknown error occurred while processing your request. Please try again.";
+  }
+};

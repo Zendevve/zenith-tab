@@ -38,3 +38,9 @@ export const ZenIcon: React.FC<{className?: string}> = ({ className }) => (
         <path d="M10 3L8 8l-5 2 5 2 2 5 2-5 5-2-5-2-2-5zM18 13l-2.039 2.039L14 17l2.039 2.039L18 21l2.039-2.039L22 17l-2.039-2.039z"></path>
     </svg>
 );
+export const LightbulbIcon: React.FC<{className?: string}> = ({ className }) => (
+  <svg {...iconProps} className={className || iconProps.className}>
+    <path d="M9 18h6M12 18V22"></path>
+    <path d="M5.6 15A6.5 6.5 0 1 1 18.4 15h0a5 5 0 0 1-10.8 0h0Z"></path>
+  </svg>
+);

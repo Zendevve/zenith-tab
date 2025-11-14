@@ -1,5 +1,5 @@
 
-export type WidgetId = 'tasks' | 'notes' | 'weather' | 'quote';
+export type WidgetId = 'tasks' | 'notes' | 'weather' | 'quote' | 'ai_assistant';
 
 export type BackgroundSetting = { type: 'random' } | { type: 'gallery', id: string, url: string } | { type: 'custom', dataUrl: string };
 

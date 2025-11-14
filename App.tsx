@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { WidgetId, Widget, Quote, BackgroundSetting } from './types';
-import fetchInspirationalQuote from './services/geminiService';
+import { fetchInspirationalQuote } from './services/geminiService';
 import Clock from './components/Clock';
 import QuoteDisplay from './components/Quote';
 import SettingsPanel from './components/Settings';
@@ -13,11 +13,13 @@ const TasksWidget = lazy(() => import('./components/TasksWidget'));
 const NotesWidget = lazy(() => import('./components/NotesWidget'));
 const WeatherWidget = lazy(() => import('./components/WeatherWidget'));
 const Greeting = lazy(() => import('./components/Greeting'));
+const AIAssistantWidget = lazy(() => import('./components/AIAssistantWidget'));
 
 const allWidgets: Widget[] = [
   { id: 'tasks', name: 'Tasks' },
   { id: 'notes', name: 'Notes' },
   { id: 'weather', name: 'Weather' },
+  { id: 'ai_assistant', name: 'AI Assistant' },
   { id: 'quote', name: 'Quote' },
 ];
 
@@ -25,6 +27,7 @@ const widgetMap: Record<WidgetId, React.LazyExoticComponent<React.FC<{}>>> = {
   tasks: TasksWidget,
   notes: NotesWidget,
   weather: WeatherWidget,
+  ai_assistant: AIAssistantWidget,
   quote: ({ children }) => <>{children}</> as any, // Quote is special, handled separately
 };
 
@@ -41,7 +44,7 @@ const App: React.FC = () => {
   const [isFocusMode, setIsFocusMode] = useState(false);
   
   const [widgetOrder, setWidgetOrder] = useLocalStorage<WidgetId[]>('widget_order', ['quote', 'tasks']);
-  const [widgetSizes, setWidgetSizes] = useLocalStorage<Record<WidgetId, number>>('widget_sizes', { tasks: 1, notes: 1, weather: 1, quote: 1 });
+  const [widgetSizes, setWidgetSizes] = useLocalStorage<Record<WidgetId, number>>('widget_sizes', { tasks: 1, notes: 1, weather: 1, quote: 1, ai_assistant: 2 });
   const [backgroundSetting, setBackgroundSetting] = useLocalStorage<BackgroundSetting>('background_setting', { type: 'random' });
   const [clockFormat, setClockFormat] = useLocalStorage<'12h' | '24h'>('clock_format', '12h');
   const [draggedWidgetId, setDraggedWidgetId] = useState<WidgetId | null>(null);
