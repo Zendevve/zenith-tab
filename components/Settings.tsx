@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { WidgetId, Widget, BackgroundSetting } from '../types';
 import { curatedBackgrounds } from '../constants/backgrounds';
@@ -66,7 +65,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
         aria-hidden="true"
       />
       <div 
-        className={`fixed top-0 right-0 h-full w-full max-w-md bg-gray-800/80 backdrop-blur-xl border-l border-white/20 text-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`fixed top-0 right-0 h-full w-full max-w-md bg-black/40 backdrop-blur-xl border-l border-white/20 text-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="settings-title"
@@ -100,7 +99,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <div className="p-3 bg-white/5 rounded-lg">
               <div className="flex items-center justify-between">
                 <span className="font-medium text-sm">Clock Format</span>
-                <div className="flex items-center bg-gray-900/50 rounded-lg p-1">
+                <div className="flex items-center bg-black/40 rounded-lg p-1">
                   <button 
                     onClick={() => setClockFormat('12h')}
                     className={`px-3 py-1 text-sm rounded-md transition-colors ${clockFormat === '12h' ? 'bg-blue-600' : 'hover:bg-white/10'}`}

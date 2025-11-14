@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { WidgetId, Widget, Quote, BackgroundSetting } from './types';
@@ -167,14 +166,14 @@ const App: React.FC = () => {
               <Greeting />
             </Suspense>
             <Clock clockFormat={clockFormat} />
-            <div className={`transition-opacity duration-500 ${isFocusMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+            <div className={`transition-all duration-500 ease-out ${isFocusMode ? 'opacity-0 pointer-events-none -translate-y-4' : 'opacity-100'}`}>
               {widgetOrder.includes('quote') && <QuoteDisplay quoteData={quoteData} isLoading={isQuoteLoading} onRefresh={refreshQuote} />}
             </div>
         </div>
         
         {activeGridWidgets.length > 0 && (
-          <div className={`w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-8 max-w-6xl transition-opacity duration-500 ${isFocusMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-            {activeGridWidgets.map(widget => {
+          <div className={`w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-8 max-w-6xl transition-all duration-500 ease-out ${isFocusMode ? 'opacity-0 pointer-events-none translate-y-5' : 'opacity-100 translate-y-0'}`}>
+            {activeGridWidgets.map((widget, index) => {
                 const WidgetComponent = widgetMap[widget.id];
                 const isBeingDragged = draggedWidgetId === widget.id;
                 const size = widgetSizes[widget.id] || 1;
@@ -193,6 +192,7 @@ const App: React.FC = () => {
                         onDrop={(e) => handleDrop(e, widget.id)}
                         onDragEnd={handleDragEnd}
                         className={`transition-opacity duration-300 cursor-move ${isBeingDragged ? 'opacity-30' : 'opacity-100'} ${colSpanClass}`}
+                        style={{ animation: `fadeInUp 0.5s ease-out ${index * 100}ms forwards`, opacity: 0 }}
                     >
                         <WidgetComponentContainer
                             title={widget.name}
