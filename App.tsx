@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { WidgetId, Widget, Quote, BackgroundSetting } from './types';
 import fetchInspirationalQuote from './services/geminiService';
@@ -40,6 +40,7 @@ const App: React.FC = () => {
   // FIX: Added 'quote' to the initial widgetSizes to match the Record<WidgetId, number> type.
   const [widgetSizes, setWidgetSizes] = useLocalStorage<Record<WidgetId, number>>('widget_sizes', { tasks: 1, notes: 1, weather: 1, quote: 1 });
   const [backgroundSetting, setBackgroundSetting] = useLocalStorage<BackgroundSetting>('background_setting', { type: 'random' });
+  const [clockFormat, setClockFormat] = useLocalStorage<'12h' | '24h'>('clock_format', '12h');
   const [draggedWidgetId, setDraggedWidgetId] = useState<WidgetId | null>(null);
 
   useEffect(() => {
@@ -71,8 +72,7 @@ const App: React.FC = () => {
     }
   }, [backgroundSetting]); 
 
-  useEffect(() => {
-    // Fetch quote only if the widget is enabled
+  const refreshQuote = useCallback(() => {
     if (widgetOrder.includes('quote')) {
       setIsQuoteLoading(true);
       fetchInspirationalQuote().then(data => {
@@ -84,6 +84,10 @@ const App: React.FC = () => {
         setIsQuoteLoading(false);
     }
   }, [widgetOrder]);
+  
+  useEffect(() => {
+    refreshQuote();
+  }, [refreshQuote]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -162,9 +166,9 @@ const App: React.FC = () => {
             <Suspense fallback={<div className="h-[60px] md:h-[72px]" />}>
               <Greeting />
             </Suspense>
-            <Clock />
+            <Clock clockFormat={clockFormat} />
             <div className={`transition-opacity duration-500 ${isFocusMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-              {widgetOrder.includes('quote') && <QuoteDisplay quoteData={quoteData} isLoading={isQuoteLoading} />}
+              {widgetOrder.includes('quote') && <QuoteDisplay quoteData={quoteData} isLoading={isQuoteLoading} onRefresh={refreshQuote} />}
             </div>
         </div>
         
@@ -232,6 +236,8 @@ const App: React.FC = () => {
         setEnabledWidgets={setWidgetOrder}
         backgroundSetting={backgroundSetting}
         setBackgroundSetting={setBackgroundSetting}
+        clockFormat={clockFormat}
+        setClockFormat={setClockFormat}
       />
     </main>
   );

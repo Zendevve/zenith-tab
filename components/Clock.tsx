@@ -1,7 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 
-const Clock: React.FC = () => {
+interface ClockProps {
+  clockFormat: '12h' | '24h';
+}
+
+const Clock: React.FC<ClockProps> = ({ clockFormat }) => {
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
@@ -12,7 +16,11 @@ const Clock: React.FC = () => {
   }, []);
 
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: clockFormat === '12h'
+    });
   };
 
   return (

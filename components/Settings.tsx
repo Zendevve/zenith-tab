@@ -13,6 +13,8 @@ interface SettingsPanelProps {
   setEnabledWidgets: React.Dispatch<React.SetStateAction<WidgetId[]>>;
   backgroundSetting: BackgroundSetting;
   setBackgroundSetting: React.Dispatch<React.SetStateAction<BackgroundSetting>>;
+  clockFormat: '12h' | '24h';
+  setClockFormat: React.Dispatch<React.SetStateAction<'12h' | '24h'>>;
 }
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({ 
@@ -22,7 +24,9 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   enabledWidgets, 
   setEnabledWidgets,
   backgroundSetting,
-  setBackgroundSetting
+  setBackgroundSetting,
+  clockFormat,
+  setClockFormat
 }) => {
   const [name, setName] = useLocalStorage('user_name', '');
 
@@ -88,6 +92,29 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                         className="w-full bg-transparent text-lg focus:outline-none mt-1 placeholder-white/50"
                     />
                 </label>
+            </div>
+          </div>
+          
+          <div className="mt-8">
+            <h3 className="text-xl font-bold mb-4">Appearance</h3>
+            <div className="p-3 bg-white/5 rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-sm">Clock Format</span>
+                <div className="flex items-center bg-gray-900/50 rounded-lg p-1">
+                  <button 
+                    onClick={() => setClockFormat('12h')}
+                    className={`px-3 py-1 text-sm rounded-md transition-colors ${clockFormat === '12h' ? 'bg-blue-600' : 'hover:bg-white/10'}`}
+                  >
+                    12-hour
+                  </button>
+                  <button 
+                    onClick={() => setClockFormat('24h')}
+                    className={`px-3 py-1 text-sm rounded-md transition-colors ${clockFormat === '24h' ? 'bg-blue-600' : 'hover:bg-white/10'}`}
+                  >
+                    24-hour
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
