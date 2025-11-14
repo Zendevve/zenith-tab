@@ -7,11 +7,12 @@ import Clock from './components/Clock';
 import QuoteDisplay from './components/Quote';
 import SettingsPanel from './components/Settings';
 import WidgetComponentContainer from './components/Widget';
-import { SettingsIcon } from './components/icons';
+import { SettingsIcon, ZenIcon } from './components/icons';
 
 const TasksWidget = lazy(() => import('./components/TasksWidget'));
 const NotesWidget = lazy(() => import('./components/NotesWidget'));
 const WeatherWidget = lazy(() => import('./components/WeatherWidget'));
+const Greeting = lazy(() => import('./components/Greeting'));
 
 const allWidgets: Widget[] = [
   { id: 'tasks', name: 'Tasks' },
@@ -33,6 +34,7 @@ const App: React.FC = () => {
   const [quoteData, setQuoteData] = useState<Quote | null>(null);
   const [isQuoteLoading, setIsQuoteLoading] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isFocusMode, setIsFocusMode] = useState(false);
   
   const [widgetOrder, setWidgetOrder] = useLocalStorage<WidgetId[]>('widget_order', ['quote', 'tasks']);
   // FIX: Added 'quote' to the initial widgetSizes to match the Record<WidgetId, number> type.
@@ -82,6 +84,19 @@ const App: React.FC = () => {
         setIsQuoteLoading(false);
     }
   }, [widgetOrder]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key.toLowerCase() === 'f') {
+            setIsFocusMode(prev => !prev);
+        }
+        if (e.key === 'Escape') {
+            setIsFocusMode(false);
+        }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const activeGridWidgets = useMemo(() => {
     return widgetOrder
@@ -144,12 +159,17 @@ const App: React.FC = () => {
       
       <div className="relative z-10 w-full h-full flex flex-col items-center p-4 md:p-8">
         <div className="flex flex-col items-center justify-center space-y-6 flex-grow text-center">
+            <Suspense fallback={<div className="h-[60px] md:h-[72px]" />}>
+              <Greeting />
+            </Suspense>
             <Clock />
-            {widgetOrder.includes('quote') && <QuoteDisplay quoteData={quoteData} isLoading={isQuoteLoading} />}
+            <div className={`transition-opacity duration-500 ${isFocusMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+              {widgetOrder.includes('quote') && <QuoteDisplay quoteData={quoteData} isLoading={isQuoteLoading} />}
+            </div>
         </div>
         
         {activeGridWidgets.length > 0 && (
-          <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-8 max-w-6xl">
+          <div className={`w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-8 max-w-6xl transition-opacity duration-500 ${isFocusMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
             {activeGridWidgets.map(widget => {
                 const WidgetComponent = widgetMap[widget.id];
                 const isBeingDragged = draggedWidgetId === widget.id;
@@ -187,13 +207,22 @@ const App: React.FC = () => {
         )}
       </div>
 
-      <button
-        onClick={() => setIsSettingsOpen(true)}
-        className="fixed bottom-6 right-6 z-20 p-4 bg-black/30 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all duration-300 shadow-lg border border-white/20"
-        aria-label="Open Settings"
-      >
-        <SettingsIcon className="w-6 h-6" />
-      </button>
+      <div className="fixed bottom-6 right-6 z-20 flex flex-col items-center gap-4">
+        <button
+          onClick={() => setIsFocusMode(prev => !prev)}
+          className="p-4 bg-black/30 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all duration-300 shadow-lg border border-white/20"
+          aria-label="Toggle Focus Mode (F)"
+        >
+          <ZenIcon className="w-6 h-6" />
+        </button>
+        <button
+          onClick={() => setIsSettingsOpen(true)}
+          className="p-4 bg-black/30 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all duration-300 shadow-lg border border-white/20"
+          aria-label="Open Settings"
+        >
+          <SettingsIcon className="w-6 h-6" />
+        </button>
+      </div>
 
       <SettingsPanel
         isOpen={isSettingsOpen}

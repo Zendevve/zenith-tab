@@ -12,6 +12,14 @@ const priorityColors: Record<TaskPriority, string> = {
   low: 'bg-blue-500',
 };
 
+const sortLabels: Record<SortBy, string> = {
+  priority: 'Priority',
+  dueDate: 'Due Date',
+  createdAt: 'Newest',
+  manual: 'Manual'
+};
+const sortOptions: SortBy[] = ['priority', 'dueDate', 'createdAt', 'manual'];
+
 const priorityCycle: Record<TaskPriority, TaskPriority> = {
   high: 'medium',
   medium: 'low',
@@ -29,6 +37,7 @@ const TasksWidget: React.FC = () => {
   const [editingDueDateTaskId, setEditingDueDateTaskId] = useState<string | null>(null);
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
   const addTaskInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -165,6 +174,12 @@ const TasksWidget: React.FC = () => {
     setDraggedTaskId(null);
   };
 
+  const handleSortChange = () => {
+    const currentIndex = sortOptions.indexOf(sortBy);
+    const nextIndex = (currentIndex + 1) % sortOptions.length;
+    setSortBy(sortOptions[nextIndex]);
+  };
+
 
   const sortedTasks = useMemo(() => {
     const priorityOrder: Record<TaskPriority, number> = { high: 1, medium: 2, low: 3 };
@@ -190,6 +205,9 @@ const TasksWidget: React.FC = () => {
       }
     });
   }, [tasks, sortBy]);
+
+  const activeTasks = sortedTasks.filter(task => !task.completed);
+  const completedTasks = sortedTasks.filter(task => task.completed);
 
   return (
     <div className="flex flex-col h-full">
@@ -229,15 +247,22 @@ const TasksWidget: React.FC = () => {
           </button>
         )}
       </div>
-      <div className="flex items-center justify-end space-x-3 mb-2 text-xs text-white/70">
-          <span className="font-medium">Sort by:</span>
-          <button onClick={() => setSortBy('manual')} className={`hover:text-white transition-colors ${sortBy === 'manual' ? 'text-white font-bold' : ''}`}>Manual</button>
-          <button onClick={() => setSortBy('priority')} className={`hover:text-white transition-colors ${sortBy === 'priority' ? 'text-white font-bold' : ''}`}>Priority</button>
-          <button onClick={() => setSortBy('dueDate')} className={`hover:text-white transition-colors ${sortBy === 'dueDate' ? 'text-white font-bold' : ''}`}>Due Date</button>
-          <button onClick={() => setSortBy('createdAt')} className={`hover:text-white transition-colors ${sortBy === 'createdAt' ? 'text-white font-bold' : ''}`}>Newest</button>
+      <div className="flex items-center justify-end mb-2 text-xs text-white/70">
+          <span className="font-medium mr-2">Sort:</span>
+          <button onClick={handleSortChange} className="hover:text-white transition-colors font-semibold w-20 text-left" aria-label={`Current sort order: ${sortLabels[sortBy]}. Click to change.`}>
+            {sortLabels[sortBy]}
+          </button>
+          {completedTasks.length > 0 && (
+            <>
+              <span className="mx-2">|</span>
+              <button onClick={() => setShowCompleted(!showCompleted)} className="hover:text-white transition-colors">
+                {showCompleted ? 'Hide' : 'Show'} completed ({completedTasks.length})
+              </button>
+            </>
+          )}
       </div>
       <ul className="space-y-2 overflow-y-auto flex-grow pr-1">
-        {sortedTasks.map((task) => {
+        {activeTasks.map((task) => {
           const isBeingDragged = draggedTaskId === task.id;
           return (
             <li 
@@ -320,7 +345,43 @@ const TasksWidget: React.FC = () => {
               <TrashIcon className="w-4 h-4 text-white/70" />
             </button>
           </li>
-        ))}
+        )}}
+        {showCompleted && completedTasks.length > 0 && (
+          <>
+            <div className="my-2 border-t border-white/20" />
+            {completedTasks.map((task) => {
+              const isBeingDragged = draggedTaskId === task.id;
+              return (
+                 <li 
+                  key={task.id} 
+                  className={`flex items-center group bg-white/5 p-2 rounded-lg transition-all duration-200 opacity-70 ${isBeingDragged ? 'opacity-30' : ''}`}
+                  draggable={!task.completed}
+                  onDragStart={(e) => handleDragStart(e, task.id)}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, task)}
+                  onDragEnd={handleDragEnd}
+                >
+                <button onClick={() => changePriority(task.id)} className={`w-2 h-6 rounded-full mr-3 cursor-pointer transition-all duration-200 group-hover:scale-110 flex-shrink-0 ${priorityColors[task.priority]}`} aria-label={`Current priority: ${task.priority}. Click to change.`} />
+                <input type="checkbox" checked={task.completed} onChange={() => toggleTask(task.id)} className="mr-3 h-4 w-4 rounded bg-white/20 border-white/30 text-blue-400 focus:ring-blue-400 flex-shrink-0" />
+                <div className="flex-grow">
+                  <>
+                    <span
+                      className={`text-sm transition-all duration-300 ${task.completed ? 'line-through text-white/50' : 'cursor-pointer'}`}
+                      onClick={() => handleStartEditing(task)}
+                    >
+                      {task.text}
+                    </span>
+                    <div className="mt-1 h-5" />
+                  </>
+                </div>
+                <button onClick={() => deleteTask(task.id)} className="ml-2 p-1 rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-500/50 transition-all" aria-label={`Delete task: ${task.text}`}>
+                  <TrashIcon className="w-4 h-4 text-white/70" />
+                </button>
+              </li>
+              )
+            })}
+          </>
+        )}
       </ul>
     </div>
   );

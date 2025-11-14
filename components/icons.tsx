@@ -33,3 +33,8 @@ export const ShuffleIcon: React.FC<{className?: string}> = ({ className }) => <s
 export const UploadIcon: React.FC<{className?: string}> = ({ className }) => <svg {...iconProps} className={className || iconProps.className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>;
 export const ChevronLeftIcon: React.FC<{className?: string}> = ({ className }) => <svg {...iconProps} className={className || iconProps.className}><polyline points="15 18 9 12 15 6"></polyline></svg>;
 export const ChevronRightIcon: React.FC<{className?: string}> = ({ className }) => <svg {...iconProps} className={className || iconProps.className}><polyline points="9 18 15 12 9 6"></polyline></svg>;
+export const ZenIcon: React.FC<{className?: string}> = ({ className }) => (
+    <svg {...iconProps} className={className || iconProps.className}>
+        <path d="M10 3L8 8l-5 2 5 2 2 5 2-5 5-2-5-2-2-5zM18 13l-2.039 2.039L14 17l2.039 2.039L18 21l2.039-2.039L22 17l-2.039-2.039z"></path>
+    </svg>
+);
