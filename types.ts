@@ -1,7 +1,13 @@
 
 export type WidgetId = 'tasks' | 'notes' | 'weather' | 'quote' | 'ai_assistant';
 
-export type BackgroundSetting = { type: 'random' } | { type: 'gallery', id: string, url: string } | { type: 'custom', dataUrl: string };
+export type BackgroundSetting = 
+  | { type: 'random' } 
+  | { type: 'gallery', id: string, url: string } 
+  | { type: 'custom', dataUrl: string }
+  | { type: 'color', color: string };
+
+export type FontOption = 'Inter' | 'Roboto Mono' | 'Playfair Display' | 'Lato' | 'Montserrat';
 
 export interface Widget {
   id: WidgetId;

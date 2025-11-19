@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
-import { WidgetId, Widget, Quote, BackgroundSetting } from './types';
+import { WidgetId, Widget, Quote, BackgroundSetting, FontOption } from './types';
 import { fetchInspirationalQuote } from './services/geminiService';
 import Clock from './components/Clock';
 import QuoteDisplay from './components/Quote';
@@ -48,6 +48,7 @@ const App: React.FC = () => {
   const [widgetSizes, setWidgetSizes] = useLocalStorage<Record<WidgetId, number>>('widget_sizes', { tasks: 1, notes: 1, weather: 1, quote: 1, ai_assistant: 2 });
   const [backgroundSetting, setBackgroundSetting] = useLocalStorage<BackgroundSetting>('background_setting', { type: 'random' });
   const [clockFormat, setClockFormat] = useLocalStorage<'12h' | '24h'>('clock_format', '12h');
+  const [font, setFont] = useLocalStorage<FontOption>('app_font', 'Inter');
   const [draggedWidgetId, setDraggedWidgetId] = useState<WidgetId | null>(null);
   const [exitingWidgetIds, setExitingWidgetIds] = useState<Set<WidgetId>>(new Set());
 
@@ -68,6 +69,12 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // If the user selected a color, we stop loading images and just set loading to false
+    if (backgroundSetting.type === 'color') {
+        setIsBgLoading(false);
+        return;
+    }
+
     setIsBgLoading(true);
 
     let newUrl = '';
@@ -77,7 +84,7 @@ const App: React.FC = () => {
       newUrl = `https://picsum.photos/${width}/${height}?grayscale&blur=2&t=${Date.now()}`;
     } else if (backgroundSetting.type === 'custom') {
       newUrl = backgroundSetting.dataUrl;
-    } else { // gallery
+    } else if (backgroundSetting.type === 'gallery') { 
       newUrl = backgroundSetting.url;
     }
 
@@ -203,18 +210,39 @@ const App: React.FC = () => {
   };
 
   return (
-    <main className="relative w-screen h-screen overflow-hidden text-white font-sans bg-black selection:bg-white/30 selection:text-white">
-      {/* Background Layer */}
+    <main 
+        className="relative w-screen h-screen overflow-hidden text-white bg-black selection:bg-white/30 selection:text-white transition-all duration-500"
+        style={{ fontFamily: `"${font}", sans-serif` }}
+    >
+      {/* Background Layer for Images */}
       <div 
         className="absolute inset-0 bg-cover bg-center transition-all duration-[2000ms] ease-[cubic-bezier(0.2,0,0,1)]" 
-        style={{ backgroundImage: `url(${bg1})`, opacity: activeBg === 'bg1' ? 1 : 0, transform: isFocusMode ? 'scale(1.02)' : 'scale(1.05)' }}
+        style={{ 
+            backgroundImage: `url(${bg1})`, 
+            opacity: backgroundSetting.type !== 'color' && activeBg === 'bg1' ? 1 : 0, 
+            transform: isFocusMode ? 'scale(1.02)' : 'scale(1.05)' 
+        }}
       />
       <div 
         className="absolute inset-0 bg-cover bg-center transition-all duration-[2000ms] ease-[cubic-bezier(0.2,0,0,1)]" 
-        style={{ backgroundImage: `url(${bg2})`, opacity: activeBg === 'bg2' ? 1 : 0, transform: isFocusMode ? 'scale(1.02)' : 'scale(1.05)' }}
+        style={{ 
+            backgroundImage: `url(${bg2})`, 
+            opacity: backgroundSetting.type !== 'color' && activeBg === 'bg2' ? 1 : 0, 
+            transform: isFocusMode ? 'scale(1.02)' : 'scale(1.05)' 
+        }}
       />
-      {/* Minimal Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60 pointer-events-none" />
+
+      {/* Background Layer for Solid Color */}
+      <div 
+        className="absolute inset-0 transition-opacity duration-1000 ease-out"
+        style={{ 
+            backgroundColor: backgroundSetting.type === 'color' ? backgroundSetting.color : 'transparent',
+            opacity: backgroundSetting.type === 'color' ? 1 : 0
+        }}
+      />
+      
+      {/* Minimal Gradient Overlay - Always active for legibility, but slightly adjusted for solid colors */}
+      <div className={`absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60 pointer-events-none transition-opacity duration-1000 ${backgroundSetting.type === 'color' ? 'opacity-50' : 'opacity-100'}`} />
       
       <div className="relative z-10 w-full h-full flex flex-col items-center p-8 md:p-16 overflow-hidden">
         {/* Center Content - Greeting, Clock, Quote */}
@@ -311,6 +339,8 @@ const App: React.FC = () => {
         setBackgroundSetting={setBackgroundSetting}
         clockFormat={clockFormat}
         setClockFormat={setClockFormat}
+        font={font}
+        setFont={setFont}
       />
     </main>
   );

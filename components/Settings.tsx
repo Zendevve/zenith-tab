@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { WidgetId, Widget, BackgroundSetting } from '../types';
+import { WidgetId, Widget, BackgroundSetting, FontOption } from '../types';
 import { curatedBackgrounds } from '../constants/backgrounds';
 import { XIcon, ShuffleIcon, UploadIcon } from './icons';
 import { useLocalStorage } from '../hooks/useLocalStorage';
@@ -14,7 +15,17 @@ interface SettingsPanelProps {
   setBackgroundSetting: React.Dispatch<React.SetStateAction<BackgroundSetting>>;
   clockFormat: '12h' | '24h';
   setClockFormat: React.Dispatch<React.SetStateAction<'12h' | '24h'>>;
+  font: FontOption;
+  setFont: React.Dispatch<React.SetStateAction<FontOption>>;
 }
+
+const fontOptions: { label: string; value: FontOption }[] = [
+    { label: 'Inter', value: 'Inter' },
+    { label: 'Lato', value: 'Lato' },
+    { label: 'Montserrat', value: 'Montserrat' },
+    { label: 'Playfair', value: 'Playfair Display' },
+    { label: 'Mono', value: 'Roboto Mono' },
+];
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({ 
   isOpen, 
@@ -25,7 +36,9 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   backgroundSetting,
   setBackgroundSetting,
   clockFormat,
-  setClockFormat
+  setClockFormat,
+  font,
+  setFont
 }) => {
   const [name, setName] = useLocalStorage('user_name', '');
 
@@ -56,6 +69,10 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
       reader.readAsDataURL(file);
     }
   };
+  
+  const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setBackgroundSetting({ type: 'color', color: e.target.value });
+  };
 
   return (
     <>
@@ -69,8 +86,9 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="settings-title"
+        style={{ fontFamily: 'Inter, sans-serif' }} // Keep settings legible in default font
       >
-        <div className="p-6 h-full overflow-y-auto">
+        <div className="p-6 h-full overflow-y-auto scrollbar-hide">
           <div className="flex justify-between items-center mb-6">
             <h2 id="settings-title" className="text-2xl font-bold">Customize</h2>
             <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-colors">
@@ -78,51 +96,67 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </button>
           </div>
           
-          <div>
-            <h3 className="text-xl font-bold mb-4">Personalization</h3>
+          <div className="mb-8">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-white/50 mb-4">Identity</h3>
             <div className="space-y-4">
-                <label className="block p-3 bg-white/5 rounded-lg">
-                    <span className="font-medium text-sm text-white/70">Your Name</span>
+                <label className="block p-3 bg-white/5 rounded-lg border border-white/5 focus-within:border-white/20 transition-colors">
+                    <span className="font-medium text-xs text-white/50 uppercase tracking-wider">Name</span>
                     <input
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="What should we call you?"
-                        className="w-full bg-transparent text-lg focus:outline-none mt-1 placeholder-white/50"
+                        placeholder="Your name"
+                        className="w-full bg-transparent text-lg focus:outline-none mt-1 placeholder-white/30"
                     />
                 </label>
             </div>
           </div>
           
-          <div className="mt-8">
-            <h3 className="text-xl font-bold mb-4">Appearance</h3>
-            <div className="p-3 bg-white/5 rounded-lg">
+          <div className="mb-8">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-white/50 mb-4">Typography</h3>
+            <div className="grid grid-cols-2 gap-2">
+                {fontOptions.map((opt) => (
+                    <button
+                        key={opt.value}
+                        onClick={() => setFont(opt.value)}
+                        className={`p-3 rounded-lg text-left transition-all ${font === opt.value ? 'bg-blue-600 text-white shadow-lg scale-[1.02]' : 'bg-white/5 text-white/70 hover:bg-white/10'}`}
+                    >
+                        <span className="block text-lg leading-none mb-1" style={{ fontFamily: opt.value }}>Aa</span>
+                        <span className="text-xs opacity-70">{opt.label}</span>
+                    </button>
+                ))}
+            </div>
+          </div>
+
+          <div className="mb-8">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-white/50 mb-4">Interface</h3>
+            <div className="p-4 bg-white/5 rounded-lg border border-white/5">
               <div className="flex items-center justify-between">
                 <span className="font-medium text-sm">Clock Format</span>
                 <div className="flex items-center bg-black/40 rounded-lg p-1">
                   <button 
                     onClick={() => setClockFormat('12h')}
-                    className={`px-3 py-1 text-sm rounded-md transition-colors ${clockFormat === '12h' ? 'bg-blue-600' : 'hover:bg-white/10'}`}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${clockFormat === '12h' ? 'bg-blue-600 text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}`}
                   >
-                    12-hour
+                    12h
                   </button>
                   <button 
                     onClick={() => setClockFormat('24h')}
-                    className={`px-3 py-1 text-sm rounded-md transition-colors ${clockFormat === '24h' ? 'bg-blue-600' : 'hover:bg-white/10'}`}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${clockFormat === '24h' ? 'bg-blue-600 text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}`}
                   >
-                    24-hour
+                    24h
                   </button>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="mt-8">
-            <h3 className="text-xl font-bold mb-4">Widgets</h3>
-            <div className="space-y-4">
+          <div className="mb-8">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-white/50 mb-4">Widgets</h3>
+            <div className="space-y-2">
               {allWidgets.map((widget) => (
-                <label key={widget.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg cursor-pointer">
-                  <span className="font-medium">{widget.name}</span>
+                <label key={widget.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg cursor-pointer border border-transparent hover:border-white/10 transition-all">
+                  <span className="font-medium text-sm">{widget.name}</span>
                   <div className="relative inline-flex items-center cursor-pointer">
                     <input 
                       type="checkbox" 
@@ -130,42 +164,59 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       checked={enabledWidgets.includes(widget.id)}
                       onChange={() => toggleWidget(widget.id)}
                     />
-                    <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-9 h-5 bg-white/10 rounded-full peer peer-focus:ring-2 peer-focus:ring-blue-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
                   </div>
                 </label>
               ))}
             </div>
           </div>
 
-          <div className="mt-8">
-              <h3 className="text-xl font-bold mb-4">Background</h3>
+          <div className="mb-8">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-white/50 mb-4">Background</h3>
               <div className="grid grid-cols-3 gap-3">
                   <button
                       onClick={() => setBackgroundSetting({ type: 'random' })}
-                      className={`relative aspect-square rounded-lg flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-blue-500 ${
-                          backgroundSetting.type === 'random' ? 'ring-2 ring-blue-500' : 'ring-1 ring-white/20'
+                      className={`relative aspect-square rounded-lg flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors focus:outline-none ${
+                          backgroundSetting.type === 'random' ? 'ring-2 ring-blue-500' : 'ring-1 ring-white/10'
                       }`}
                       aria-label="Set random background"
                   >
-                      <ShuffleIcon className="w-8 h-8 text-white/70" />
-                      <span className="absolute bottom-2 text-xs font-medium">Random</span>
+                      <ShuffleIcon className="w-6 h-6 text-white/70" />
+                      <span className="absolute bottom-2 text-[10px] font-medium uppercase tracking-wide text-white/50">Random</span>
                   </button>
 
                   <label
+                      className={`relative aspect-square rounded-lg flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors cursor-pointer focus-within:ring-2 focus-within:ring-blue-500 ${
+                          backgroundSetting.type === 'color' ? 'ring-2 ring-blue-500' : 'ring-1 ring-white/10'
+                      }`}
+                      title="Pick a solid color"
+                  >
+                       <div 
+                            className="w-8 h-8 rounded-full border border-white/20 shadow-lg" 
+                            style={{ background: backgroundSetting.type === 'color' ? backgroundSetting.color : 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)' }}
+                       />
+                       <span className="absolute bottom-2 text-[10px] font-medium uppercase tracking-wide text-white/50">Color</span>
+                       <input 
+                            type="color" 
+                            className="opacity-0 absolute inset-0 cursor-pointer w-full h-full"
+                            onChange={handleColorChange}
+                            value={backgroundSetting.type === 'color' ? backgroundSetting.color : '#000000'}
+                       />
+                  </label>
+
+                  <label
                       htmlFor="background-upload"
-                      className={`relative aspect-square rounded-lg flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors cursor-pointer overflow-hidden focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-offset-gray-800 focus-within:ring-blue-500 ${
-                          backgroundSetting.type === 'custom' ? 'ring-2 ring-blue-500' : 'ring-1 ring-white/20'
+                      className={`relative aspect-square rounded-lg flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors cursor-pointer overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 ${
+                          backgroundSetting.type === 'custom' ? 'ring-2 ring-blue-500' : 'ring-1 ring-white/10'
                       }`}
                       aria-label="Upload custom background"
                   >
                       {backgroundSetting.type === 'custom' ? (
-                          <img src={backgroundSetting.dataUrl} className="w-full h-full object-cover" alt="Custom background preview" />
+                          <img src={backgroundSetting.dataUrl} className="w-full h-full object-cover opacity-50" alt="Custom background preview" />
                       ) : (
-                          <>
-                              <UploadIcon className="w-8 h-8 text-white/70" />
-                              <span className="absolute bottom-2 text-xs font-medium">Upload</span>
-                          </>
+                           <UploadIcon className="w-6 h-6 text-white/70" />
                       )}
+                      <span className="absolute bottom-2 text-[10px] font-medium uppercase tracking-wide text-white/50">Upload</span>
                       <input
                           id="background-upload"
                           type="file"
@@ -179,16 +230,20 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       <button
                           key={bg.id}
                           onClick={() => setBackgroundSetting({ type: 'gallery', id: bg.id, url: bg.url })}
-                          className={`relative aspect-square rounded-lg bg-cover bg-center focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-blue-500 overflow-hidden ${
-                            backgroundSetting.type === 'gallery' && backgroundSetting.id === bg.id ? 'ring-2 ring-blue-500' : 'ring-1 ring-white/20'
+                          className={`relative aspect-square rounded-lg bg-cover bg-center focus:outline-none overflow-hidden group ${
+                            backgroundSetting.type === 'gallery' && backgroundSetting.id === bg.id ? 'ring-2 ring-blue-500' : 'ring-1 ring-white/10'
                           }`}
                           style={{ backgroundImage: `url(${bg.thumbnailUrl})` }}
                           aria-label={`Set background to ${bg.id}`}
                       >
-                          <div className="absolute inset-0 bg-black/20 hover:bg-black/0 transition-colors duration-300"></div>
+                          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors duration-300"></div>
                       </button>
                   ))}
               </div>
+          </div>
+          
+          <div className="mt-8 text-center">
+             <p className="text-xs text-white/20">Zenith Tab v1.0</p>
           </div>
         </div>
       </div>

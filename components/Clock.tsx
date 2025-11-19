@@ -29,7 +29,6 @@ const Clock: React.FC<ClockProps> = ({ clockFormat }) => {
             className="text-[6rem] md:text-[10rem] leading-none font-thin tracking-tighter text-white/90 text-center transition-all duration-1000 ease-[cubic-bezier(0.2,0,0,1)] transform group-hover:scale-[1.01] group-hover:text-white" 
             style={{ 
                 textShadow: '0 0 60px rgba(255,255,255,0.1)',
-                fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
                 fontWeight: 100
             }}
         >
