@@ -6,7 +6,6 @@ const Greeting: React.FC = () => {
   const [name] = useLocalStorage('user_name', '');
   const [greeting, setGreeting] = useState('');
 
-  // Set greeting based on time of day, but only once on mount.
   useEffect(() => {
     const hour = new Date().getHours();
     if (hour >= 5 && hour < 12) {
@@ -20,10 +19,9 @@ const Greeting: React.FC = () => {
 
   return (
     <h1 
-      className="text-4xl md:text-5xl text-white/90 font-medium [animation:fadeIn_1s_ease-in-out]" 
-      style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}
+      className="text-2xl md:text-3xl text-white/60 font-light tracking-wide animate-fadeIn" 
     >
-      {greeting}{name ? `, ${name}` : '.'}
+      {greeting}{name ? <span className="text-white/90 font-normal">, {name}</span> : ''}
     </h1>
   );
 };

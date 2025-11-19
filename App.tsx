@@ -28,7 +28,7 @@ const widgetMap: Record<WidgetId, React.LazyExoticComponent<React.FC<{}>>> = {
   notes: NotesWidget,
   weather: WeatherWidget,
   ai_assistant: AIAssistantWidget,
-  quote: ({ children }) => <>{children}</> as any, // Quote is special, handled separately
+  quote: ({ children }) => <>{children}</> as any,
 };
 
 
@@ -37,6 +37,7 @@ const App: React.FC = () => {
   const [bg2, setBg2] = useState('');
   const [activeBg, setActiveBg] = useState<'bg1' | 'bg2'>('bg1');
   const [isInitialBgLoaded, setIsInitialBgLoaded] = useState(false);
+  const [isBgLoading, setIsBgLoading] = useState(true);
 
   const [quoteData, setQuoteData] = useState<Quote | null>(null);
   const [isQuoteLoading, setIsQuoteLoading] = useState(true);
@@ -52,7 +53,6 @@ const App: React.FC = () => {
 
 
   useEffect(() => {
-    // One-time migration from old 'enabled_widgets' key
     try {
         const oldEnabledRaw = localStorage.getItem('enabled_widgets');
         if (oldEnabledRaw) {
@@ -68,6 +68,8 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    setIsBgLoading(true);
+
     let newUrl = '';
     if (backgroundSetting.type === 'random') {
       const width = window.innerWidth;
@@ -79,18 +81,32 @@ const App: React.FC = () => {
       newUrl = backgroundSetting.url;
     }
 
-    if (!newUrl) return;
-
-    if (!isInitialBgLoaded) {
-      setBg1(newUrl);
-      setIsInitialBgLoaded(true);
-    } else {
-      if (activeBg === 'bg1') {
-        if (newUrl !== bg2) { setBg2(newUrl); setActiveBg('bg2'); }
-      } else {
-        if (newUrl !== bg1) { setBg1(newUrl); setActiveBg('bg1'); }
-      }
+    if (!newUrl) {
+      setIsBgLoading(false);
+      return;
     }
+
+    const img = new Image();
+    img.src = newUrl;
+    
+    img.onload = () => {
+      if (!isInitialBgLoaded) {
+        setBg1(newUrl);
+        setIsInitialBgLoaded(true);
+      } else {
+        if (activeBg === 'bg1') {
+          if (newUrl !== bg2) { setBg2(newUrl); setActiveBg('bg2'); }
+        } else {
+          if (newUrl !== bg1) { setBg1(newUrl); setActiveBg('bg1'); }
+        }
+      }
+      setIsBgLoading(false);
+    };
+
+    img.onerror = () => {
+      console.error("Failed to load background image:", newUrl);
+      setIsBgLoading(false);
+    };
   }, [backgroundSetting]); 
 
   const refreshQuote = useCallback(() => {
@@ -145,7 +161,7 @@ const App: React.FC = () => {
         newSet.delete(idToRemove);
         return newSet;
       });
-    }, 300); // Corresponds to fadeOut animation duration
+    }, 500); 
   };
 
   const handleDragStart = (e: React.DragEvent, widgetId: WidgetId) => {
@@ -187,30 +203,43 @@ const App: React.FC = () => {
   };
 
   return (
-    <main className="relative w-screen h-screen overflow-hidden text-white font-sans">
+    <main className="relative w-screen h-screen overflow-hidden text-white font-sans bg-black selection:bg-white/20 selection:text-white">
+      {/* Background Layer */}
       <div 
-        className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000" 
-        style={{ backgroundImage: `url(${bg1})`, opacity: activeBg === 'bg1' ? 1 : 0 }}
+        className="absolute inset-0 bg-cover bg-center transition-opacity duration-[2000ms] ease-in-out" 
+        style={{ backgroundImage: `url(${bg1})`, opacity: activeBg === 'bg1' ? 1 : 0, transform: 'scale(1.05)' }}
       />
       <div 
-        className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000" 
-        style={{ backgroundImage: `url(${bg2})`, opacity: activeBg === 'bg2' ? 1 : 0 }}
+        className="absolute inset-0 bg-cover bg-center transition-opacity duration-[2000ms] ease-in-out" 
+        style={{ backgroundImage: `url(${bg2})`, opacity: activeBg === 'bg2' ? 1 : 0, transform: 'scale(1.05)' }}
       />
-      <div className="absolute inset-0 bg-black/40" />
+      {/* Minimal Gradient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-black/40 pointer-events-none backdrop-blur-[1px]" />
       
-      <div className="relative z-10 w-full h-full flex flex-col items-center p-4 md:p-8">
-        <div className="flex flex-col items-center justify-center space-y-6 flex-grow text-center">
-            <Suspense fallback={<div className="h-[60px] md:h-[72px]" />}>
-              <Greeting />
+      <div className="relative z-10 w-full h-full flex flex-col items-center p-8 md:p-16 overflow-hidden">
+        {/* Center Content - Greeting, Clock, Quote */}
+        <div className={`flex flex-col items-center justify-center space-y-6 flex-grow text-center w-full max-w-5xl transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] ${isFocusMode ? 'scale-105' : 'scale-100'}`}>
+            <Suspense fallback={<div className="h-10" />}>
+              <div className={`transition-all duration-1000 ease-out delay-100 ${isFocusMode ? 'opacity-80' : 'opacity-100'}`}>
+                  <Greeting />
+              </div>
             </Suspense>
-            <Clock clockFormat={clockFormat} />
-            <div className={`transition-all duration-500 ease-out ${isFocusMode ? 'opacity-0 pointer-events-none -translate-y-4' : 'opacity-100'}`}>
+            
+            <div className="py-2">
+                <Clock clockFormat={clockFormat} />
+            </div>
+            
+            <div className={`transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] w-full ${isFocusMode ? 'opacity-0 pointer-events-none translate-y-4 blur-md' : 'opacity-100'}`}>
               {widgetOrder.includes('quote') && <QuoteDisplay quoteData={quoteData} isLoading={isQuoteLoading} onRefresh={refreshQuote} />}
             </div>
         </div>
         
+        {/* Widgets Grid */}
         {activeGridWidgets.length > 0 && (
-          <div className={`w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-8 max-w-6xl transition-all duration-500 ease-out ${isFocusMode ? 'opacity-0 pointer-events-none translate-y-5' : 'opacity-100 translate-y-0'}`}>
+          <div 
+            className={`w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10 max-w-6xl transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] ${isFocusMode ? 'opacity-0 pointer-events-none translate-y-20 blur-lg scale-95' : 'opacity-100 translate-y-0 scale-100'}`} 
+            style={{ maxHeight: '40vh' }}
+          >
             {activeGridWidgets.map((widget, index) => {
                 const WidgetContent = widgetMap[widget.id];
                 const isBeingDragged = draggedWidgetId === widget.id;
@@ -230,8 +259,8 @@ const App: React.FC = () => {
                         onDragOver={handleDragOver}
                         onDrop={(e) => handleDrop(e, widget.id)}
                         onDragEnd={handleDragEnd}
-                        className={`transition-all duration-300 ease-in-out ${isExiting ? 'animate-fadeOut pointer-events-none' : ''} ${isBeingDragged ? 'opacity-30' : 'opacity-100'} ${colSpanClass} ${!isExiting ? 'cursor-move' : ''}`}
-                        style={{ animation: !isExiting ? `fadeInUp 0.5s ease-out ${index * 100}ms forwards` : undefined, opacity: 0 }}
+                        className={`transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${isExiting ? 'opacity-0 scale-90 blur-md' : ''} ${isBeingDragged ? 'opacity-30 scale-95' : 'opacity-100'} ${colSpanClass} ${!isExiting ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                        style={{ animation: !isExiting ? `fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${index * 100}ms forwards` : undefined, opacity: 0 }}
                     >
                         <WidgetComponent
                             title={widget.name}
@@ -240,7 +269,7 @@ const App: React.FC = () => {
                             onSizeChange={handleSizeChange}
                             onClose={handleCloseWidget}
                         >
-                            <Suspense fallback={<div className="bg-black/20 backdrop-blur-md rounded-2xl p-4 animate-pulse h-48"></div>}>
+                            <Suspense fallback={<div className="bg-white/5 rounded-3xl animate-pulse h-48"></div>}>
                                 <WidgetContent />
                             </Suspense>
                         </WidgetComponent>
@@ -251,20 +280,24 @@ const App: React.FC = () => {
         )}
       </div>
 
-      <div className="fixed bottom-6 right-6 z-20 flex flex-col items-center gap-4">
+      {/* Footer Controls */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
         <button
           onClick={() => setIsFocusMode(prev => !prev)}
-          className="p-4 bg-black/30 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all duration-300 shadow-lg border border-white/20"
+          className={`w-10 h-10 flex items-center justify-center rounded-full text-white transition-all duration-500 backdrop-blur-md border shadow-2xl
+            ${isFocusMode ? 'bg-white/20 border-white/30 rotate-180' : 'bg-black/30 border-white/5 hover:bg-white/10'}`}
           aria-label="Toggle Focus Mode (F)"
+          title="Zen Mode"
         >
-          <ZenIcon className="w-6 h-6" />
+          <ZenIcon className="w-4 h-4" />
         </button>
         <button
           onClick={() => setIsSettingsOpen(true)}
-          className="p-4 bg-black/30 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all duration-300 shadow-lg border border-white/20"
+          className={`w-10 h-10 flex items-center justify-center bg-black/30 backdrop-blur-md rounded-full text-white hover:bg-white/10 transition-all duration-300 shadow-2xl border border-white/5 ${isFocusMode ? 'translate-y-20 opacity-0' : ''}`}
           aria-label="Open Settings"
+          title="Settings"
         >
-          <SettingsIcon className="w-6 h-6" />
+          <SettingsIcon className="w-4 h-4" />
         </button>
       </div>
 

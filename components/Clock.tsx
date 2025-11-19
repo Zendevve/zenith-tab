@@ -24,8 +24,13 @@ const Clock: React.FC<ClockProps> = ({ clockFormat }) => {
   };
 
   return (
-    <div className="text-white text-8xl md:text-9xl font-bold tracking-tight text-center" style={{ textShadow: '0 4px 15px rgba(0,0,0,0.5)' }}>
-      {formatTime(time)}
+    <div className="relative group cursor-default">
+        <div 
+            className="text-8xl md:text-[10rem] leading-none font-thin tracking-tighter text-white text-center select-none transition-all duration-700 ease-out transform group-hover:scale-105" 
+            style={{ textShadow: '0 0 40px rgba(255,255,255,0.1)' }}
+        >
+        {formatTime(time)}
+        </div>
     </div>
   );
 };
