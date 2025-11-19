@@ -7,8 +7,8 @@ export const curatedBackgrounds = [
   },
   {
     id: 'abstract-architecture',
-    url: 'https://images.unsplash.com/photo-1486718448742-163732cd1544?auto=format&fit=crop&w=1920&q=80',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1486718448742-163732cd1544?auto=format&fit=crop&w=200&q=80',
+    url: 'https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=1920&q=80',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=200&q=80',
   },
   {
     id: 'misty-forest',
@@ -27,7 +27,7 @@ export const curatedBackgrounds = [
   },
   {
     id: 'tokyo-night',
-    url: 'https://images.unsplash.com/photo-1536950799538-c340c27838be?auto=format&fit=crop&w=1920&q=80',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1536950799538-c340c27838be?auto=format&fit=crop&w=200&q=80',
+    url: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1920&q=80',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=200&q=80',
   },
 ];

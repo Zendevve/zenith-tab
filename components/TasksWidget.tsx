@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { Task, TaskPriority } from '../types';
 import { PlusIcon, TrashIcon } from './icons';
@@ -7,18 +7,10 @@ import { PlusIcon, TrashIcon } from './icons';
 type SortBy = 'priority' | 'dueDate' | 'createdAt' | 'manual';
 
 const priorityColors: Record<TaskPriority, string> = {
-  high: 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.4)]',
-  medium: 'bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.4)]',
-  low: 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.4)]',
+  high: 'bg-rose-400/90 shadow-[0_0_10px_rgba(244,63,94,0.4)]',
+  medium: 'bg-amber-300/90 shadow-[0_0_10px_rgba(251,191,36,0.4)]',
+  low: 'bg-emerald-400/90 shadow-[0_0_10px_rgba(52,211,153,0.4)]',
 };
-
-const sortLabels: Record<SortBy, string> = {
-  priority: 'Priority',
-  dueDate: 'Date',
-  createdAt: 'Recent',
-  manual: 'Manual'
-};
-const sortOptions: SortBy[] = ['priority', 'dueDate', 'createdAt', 'manual'];
 
 const priorityCycle: Record<TaskPriority, TaskPriority> = {
   high: 'medium',
@@ -33,11 +25,11 @@ const TasksWidget: React.FC = () => {
   const [sortBy, setSortBy] = useLocalStorage<SortBy>('tasks_sort_by', 'priority');
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTaskText, setEditingTaskText] = useState('');
-  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [isInputFocused, setIsInputFocused] = useState(false);
+  
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
 
   useEffect(() => {
-    // One-time migration
     if (tasks.length > 0 && (typeof tasks[0].priority === 'undefined' || typeof tasks[0].createdAt === 'undefined')) {
       setTasks(currentTasks => 
         currentTasks.map(task => ({
@@ -49,7 +41,6 @@ const TasksWidget: React.FC = () => {
       );
     }
   }, []);
-
 
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,7 +87,6 @@ const TasksWidget: React.FC = () => {
 
   const handleSaveEdit = () => {
     if (!editingTaskId) return;
-
     if (editingTaskText.trim() === '') {
       deleteTask(editingTaskId);
     } else {
@@ -104,21 +94,18 @@ const TasksWidget: React.FC = () => {
         task.id === editingTaskId ? { ...task, text: editingTaskText.trim() } : task
       ));
     }
-    
     setEditingTaskId(null);
     setEditingTaskText('');
   };
   
   const handleEditKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleSaveEdit();
-    } else if (e.key === 'Escape') {
+    if (e.key === 'Enter') handleSaveEdit();
+    else if (e.key === 'Escape') {
       setEditingTaskId(null);
       setEditingTaskText('');
     }
   };
-  
-  // Drag and Drop Handlers
+
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
     setDraggedTaskId(taskId);
     e.dataTransfer.effectAllowed = 'move';
@@ -137,11 +124,7 @@ const TasksWidget: React.FC = () => {
     if (draggedId === targetTask.id) return;
     
     const draggedTask = tasks.find(t => t.id === draggedId);
-    if (!draggedTask) return;
-
-    if (draggedTask.completed !== targetTask.completed) {
-      return;
-    }
+    if (!draggedTask || draggedTask.completed !== targetTask.completed) return;
 
     let newTasks = [...tasks];
     const draggedIndex = newTasks.findIndex(t => t.id === draggedId);
@@ -155,37 +138,14 @@ const TasksWidget: React.FC = () => {
     setTasks(newTasks);
     setSortBy('manual'); 
   };
-  
-  const handleDragEnd = () => {
-    setDraggedTaskId(null);
-  };
-
-  const handleSortChange = () => {
-    const currentIndex = sortOptions.indexOf(sortBy);
-    const nextIndex = (currentIndex + 1) % sortOptions.length;
-    setSortBy(sortOptions[nextIndex]);
-  };
-
 
   const sortedTasks = useMemo(() => {
     const priorityOrder: Record<TaskPriority, number> = { high: 1, medium: 2, low: 3 };
     return [...tasks].sort((a, b) => {
-      if (a.completed !== b.completed) {
-        return a.completed ? 1 : -1;
-      }
-      if (sortBy === 'manual') {
-        return 0;
-      }
-      switch (sortBy) {
-        case 'priority':
-          return priorityOrder[a.priority] - priorityOrder[b.priority];
-        case 'createdAt':
-          return b.createdAt - a.createdAt;
-        case 'dueDate':
-           return b.createdAt - a.createdAt; 
-        default:
-          return 0;
-      }
+      if (a.completed !== b.completed) return a.completed ? 1 : -1;
+      if (sortBy === 'manual') return 0;
+      if (sortBy === 'priority') return priorityOrder[a.priority] - priorityOrder[b.priority];
+      return b.createdAt - a.createdAt;
     });
   }, [tasks, sortBy]);
 
@@ -194,6 +154,7 @@ const TasksWidget: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full">
+      {/* Minimal Input */}
       <div className="relative mb-4 group/input">
         <form onSubmit={handleAddTask} className="relative flex items-center">
             <input
@@ -201,61 +162,51 @@ const TasksWidget: React.FC = () => {
                 value={newTaskText}
                 onChange={(e) => setNewTaskText(e.target.value)}
                 onFocus={() => setIsInputFocused(true)}
-                onBlur={() => {
-                    if (!newTaskText) setIsInputFocused(false);
-                }}
-                placeholder="Add a new task..."
-                className="w-full bg-transparent border-b border-white/10 text-sm font-light focus:border-white/50 focus:outline-none py-2 pl-0 placeholder-white/20 transition-all duration-300"
+                onBlur={() => !newTaskText && setIsInputFocused(false)}
+                placeholder="Add new task"
+                className="w-full bg-transparent border-b border-white/5 text-sm font-light focus:border-white/20 focus:outline-none py-2 px-1 placeholder-white/10 transition-all duration-500"
             />
-            <div className={`absolute right-0 flex items-center transition-all duration-300 ${isInputFocused || newTaskText ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2 pointer-events-none'}`}>
+            <div className={`absolute right-0 flex items-center transition-all duration-500 ${isInputFocused || newTaskText ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2 pointer-events-none'}`}>
                  <button 
                       type="button"
                       onClick={() => setNewPriority(priorityCycle[newPriority])}
-                      className={`w-2 h-2 rounded-full mr-2 ${priorityColors[newPriority]} transition-transform hover:scale-125`}
-                      title="Priority"
+                      className={`w-1.5 h-1.5 rounded-full mr-3 ${priorityColors[newPriority]} transition-all hover:scale-150`}
                    />
-                 <button type="submit" className="text-white/50 hover:text-white transition-colors">
+                 <button type="submit" className="text-white/30 hover:text-white transition-colors">
                     <PlusIcon className="w-4 h-4" />
                  </button>
             </div>
         </form>
       </div>
 
-      <div className="flex items-center justify-end mb-2 text-[10px] uppercase tracking-wider text-white/30 font-medium">
-          <button onClick={handleSortChange} className="hover:text-white/80 transition-colors flex items-center gap-1" aria-label="Change sort order">
-            <span>Sort:</span> <span className="text-white/50">{sortLabels[sortBy]}</span>
-          </button>
-      </div>
-
-      <ul className="space-y-1 overflow-y-auto flex-grow pr-1 -mr-2 pb-2 scrollbar-hide">
-        {activeTasks.map((task) => {
-          const isBeingDragged = draggedTaskId === task.id;
-          return (
+      {/* Task List */}
+      <ul className="space-y-1 overflow-visible flex-grow">
+        {activeTasks.map((task, idx) => (
             <li 
               key={task.id} 
-              className={`flex items-center group py-2 pl-1 pr-2 rounded-lg transition-all duration-300 hover:bg-white/5 ${isBeingDragged ? 'opacity-30' : 'opacity-100'}`}
-              draggable={!task.completed}
+              className={`group flex items-center py-2 -mx-2 px-3 rounded-lg transition-all duration-500 hover:bg-white/[0.02] ${draggedTaskId === task.id ? 'opacity-30' : 'opacity-100'}`}
+              draggable
               onDragStart={(e) => handleDragStart(e, task.id)}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, task)}
-              onDragEnd={handleDragEnd}
+              onDragEnd={() => setDraggedTaskId(null)}
+              style={{ animation: `fadeInUp 0.4s cubic-bezier(0.2,0,0,1) ${idx * 50}ms forwards` }}
             >
-            <div className="mr-3 flex items-center justify-center">
-                <button 
-                    onClick={() => changePriority(task.id)} 
-                    className={`w-1.5 h-1.5 rounded-full cursor-pointer transition-all duration-300 opacity-40 group-hover:opacity-100 hover:scale-150 ${priorityColors[task.priority]}`} 
-                    aria-label="Change priority" 
-                />
+            {/* Priority Dot */}
+            <button 
+                onClick={() => changePriority(task.id)} 
+                className={`flex-shrink-0 w-1.5 h-1.5 rounded-full mr-4 transition-all duration-500 opacity-40 group-hover:opacity-100 ${priorityColors[task.priority]}`}
+            />
+            
+            {/* Custom Checkbox */}
+            <div 
+                className="flex-shrink-0 mr-3 cursor-pointer relative group/check w-4 h-4 flex items-center justify-center"
+                onClick={() => toggleTask(task.id)}
+            >
+                <div className="w-3.5 h-3.5 rounded-full border border-white/10 transition-all duration-300 group-hover/check:border-white/50 group-hover/check:scale-110" />
             </div>
             
-            <div className="flex-grow min-w-0 flex items-center">
-                <div 
-                        className="mr-3 relative cursor-pointer group/check w-4 h-4 flex items-center justify-center"
-                        onClick={() => toggleTask(task.id)}
-                >
-                    <div className="w-3.5 h-3.5 rounded-full border border-white/20 transition-all duration-300 group-hover/check:border-white/60 group-hover/check:scale-110" />
-                </div>
-                
+            <div className="flex-grow min-w-0">
                 {editingTaskId === task.id ? (
                 <input
                     type="text"
@@ -263,56 +214,49 @@ const TasksWidget: React.FC = () => {
                     onChange={(e) => setEditingTaskText(e.target.value)}
                     onBlur={handleSaveEdit}
                     onKeyDown={handleEditKeyDown}
-                    className="w-full bg-transparent border-b border-white/40 text-sm font-light focus:outline-none py-0"
+                    className="w-full bg-transparent border-b border-white/20 text-sm font-light focus:outline-none py-0"
                     autoFocus
                 />
                 ) : (
                 <span
-                    className="text-sm font-light text-white/80 cursor-pointer leading-normal truncate w-full transition-colors hover:text-white"
+                    className="block text-sm font-light text-white/80 cursor-pointer truncate transition-colors duration-300 hover:text-white"
                     onClick={() => handleStartEditing(task)}
                 >
                     {task.text}
                 </span>
                 )}
             </div>
-            <button onClick={() => deleteTask(task.id)} className="ml-2 p-1 rounded-full opacity-0 group-hover:opacity-100 hover:bg-white/10 transition-all duration-300" aria-label="Delete task">
-              <TrashIcon className="w-3 h-3 text-white/30 hover:text-red-400" />
+            
+            {/* Actions */}
+            <button onClick={() => deleteTask(task.id)} className="ml-2 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-white/10 hover:text-red-400">
+              <TrashIcon className="w-3.5 h-3.5" />
             </button>
           </li>
-        )}}
+        ))}
         
         {completedTasks.length > 0 && (
-          <>
-            <div className="my-4 border-t border-white/5 w-1/3 mx-auto" />
-            {completedTasks.map((task) => (
-                 <li 
-                  key={task.id} 
-                  className="flex items-center group py-1 pl-1 pr-2 rounded-lg transition-all duration-300 opacity-40 hover:opacity-60"
-                >
-                 <div className="mr-3 w-1.5 h-1.5 flex items-center justify-center">
-                     <div className="w-1 h-1 rounded-full bg-white/20" />
-                 </div>
-                
-                <div 
-                    className="mr-3 cursor-pointer w-4 h-4 flex items-center justify-center"
-                    onClick={() => toggleTask(task.id)}
-                >
-                     <div className="w-3.5 h-3.5 rounded-full border border-white/10 bg-white/5 flex items-center justify-center">
-                        <div className="w-1.5 h-1.5 bg-white/40 rounded-full" />
-                     </div>
-                </div>
-
-                <div className="flex-grow min-w-0">
-                    <span className="text-sm font-light line-through text-white/50 decoration-white/20">
+          <div className="pt-6 pb-2">
+             <div className="text-[9px] uppercase tracking-[0.25em] text-white/10 mb-2 pl-2 font-bold">Done</div>
+             {completedTasks.map((task) => (
+                 <li key={task.id} className="group flex items-center py-1.5 opacity-30 hover:opacity-60 transition-opacity duration-300 px-1">
+                    <div className="w-1 h-1 mr-4 rounded-full bg-white/10" />
+                    <div 
+                        className="mr-3 cursor-pointer w-4 h-4 flex items-center justify-center"
+                        onClick={() => toggleTask(task.id)}
+                    >
+                         <div className="w-3.5 h-3.5 rounded-full bg-white/5 flex items-center justify-center border border-white/5">
+                            <div className="w-1.5 h-1.5 bg-white/40 rounded-full" />
+                         </div>
+                    </div>
+                    <span className="text-sm font-light line-through text-white/50 decoration-white/10 flex-grow truncate">
                       {task.text}
                     </span>
-                </div>
-                <button onClick={() => deleteTask(task.id)} className="ml-2 p-1 opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all">
-                  <TrashIcon className="w-3 h-3" />
-                </button>
-              </li>
-            ))}
-          </>
+                    <button onClick={() => deleteTask(task.id)} className="ml-2 hover:text-white transition-colors">
+                      <TrashIcon className="w-3 h-3" />
+                    </button>
+                 </li>
+             ))}
+          </div>
         )}
       </ul>
     </div>

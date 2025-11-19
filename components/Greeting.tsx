@@ -19,9 +19,9 @@ const Greeting: React.FC = () => {
 
   return (
     <h1 
-      className="text-2xl md:text-3xl text-white/60 font-light tracking-wide animate-fadeIn" 
+      className="text-lg md:text-xl text-white/60 font-light tracking-[0.2em] uppercase animate-fadeIn mix-blend-overlay" 
     >
-      {greeting}{name ? <span className="text-white/90 font-normal">, {name}</span> : ''}
+      {greeting}{name ? <span className="text-white/90 font-normal ml-2">{name}</span> : ''}
     </h1>
   );
 };

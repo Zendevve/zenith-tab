@@ -37,40 +37,39 @@ const AIAssistantWidget: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full">
-      <div ref={responseContainerRef} className="flex-grow overflow-y-auto mb-3 pr-2 text-sm space-y-4">
+      <div ref={responseContainerRef} className="flex-grow overflow-y-auto mb-4 pr-2 text-sm space-y-4 scrollbar-hide">
         {!isLoading && !response && !error && (
-            <div className="flex flex-col items-center justify-center h-full text-center text-white/60 p-4">
-                <LightbulbIcon className="w-10 h-10 mb-3" />
-                <h3 className="font-bold text-white/80">Zenith AI</h3>
-                <p>Ask complex questions, brainstorm ideas, or get help with a tricky problem.</p>
+            <div className="flex flex-col items-center justify-center h-full text-center text-white/30 p-4 animate-fadeIn">
+                <LightbulbIcon className="w-8 h-8 mb-4 opacity-50" />
+                <h3 className="font-bold text-white/60 uppercase tracking-widest text-xs mb-2">Zenith AI</h3>
+                <p className="font-light leading-relaxed">Ask, brainstorm, or solve.</p>
             </div>
         )}
         {isLoading && (
-          <div className="flex items-center space-x-2 text-white/80">
-            <div className="w-2 h-2 bg-white/80 rounded-full animate-pulse" style={{ animationDelay: '0s' }}></div>
-            <div className="w-2 h-2 bg-white/80 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-            <div className="w-2 h-2 bg-white/80 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-            <span>Thinking...</span>
+          <div className="flex items-center space-x-2 text-white/40 h-full justify-center">
+            <div className="w-1.5 h-1.5 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
+            <div className="w-1.5 h-1.5 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>
+            <div className="w-1.5 h-1.5 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
           </div>
         )}
-        {error && <pre className="text-red-400 whitespace-pre-wrap font-sans">{error}</pre>}
-        {response && <pre className="text-white/90 whitespace-pre-wrap font-sans">{response}</pre>}
+        {error && <pre className="text-red-400/80 whitespace-pre-wrap font-sans text-xs leading-relaxed">{error}</pre>}
+        {response && <pre className="text-white/80 whitespace-pre-wrap font-sans font-light leading-relaxed animate-fadeIn">{response}</pre>}
       </div>
-      <form onSubmit={handleSubmit} className="flex items-center space-x-2">
+      <form onSubmit={handleSubmit} className="flex items-center relative group">
         <input
           type="text"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Ask me anything..."
+          placeholder="Ask anything..."
           disabled={isLoading}
-          className="w-full bg-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-white/50 disabled:opacity-50"
+          className="w-full bg-white/5 rounded-full px-4 py-2.5 text-sm font-light focus:outline-none focus:bg-white/10 focus:ring-1 focus:ring-white/20 placeholder-white/20 transition-all duration-300 disabled:opacity-50"
         />
         <button
           type="submit"
           disabled={isLoading || !prompt.trim()}
-          className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 transition-colors font-semibold disabled:bg-blue-800 disabled:cursor-not-allowed"
+          className="absolute right-1 p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-all disabled:opacity-0 disabled:scale-90"
         >
-          Send
+          <svg className="w-4 h-4 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19V5M5 12l7-7 7 7"></path></svg>
         </button>
       </form>
     </div>

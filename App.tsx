@@ -161,7 +161,7 @@ const App: React.FC = () => {
         newSet.delete(idToRemove);
         return newSet;
       });
-    }, 500); 
+    }, 600); 
   };
 
   const handleDragStart = (e: React.DragEvent, widgetId: WidgetId) => {
@@ -203,33 +203,33 @@ const App: React.FC = () => {
   };
 
   return (
-    <main className="relative w-screen h-screen overflow-hidden text-white font-sans bg-black selection:bg-white/20 selection:text-white">
+    <main className="relative w-screen h-screen overflow-hidden text-white font-sans bg-black selection:bg-white/30 selection:text-white">
       {/* Background Layer */}
       <div 
-        className="absolute inset-0 bg-cover bg-center transition-opacity duration-[2000ms] ease-in-out" 
-        style={{ backgroundImage: `url(${bg1})`, opacity: activeBg === 'bg1' ? 1 : 0, transform: 'scale(1.05)' }}
+        className="absolute inset-0 bg-cover bg-center transition-all duration-[2000ms] ease-[cubic-bezier(0.2,0,0,1)]" 
+        style={{ backgroundImage: `url(${bg1})`, opacity: activeBg === 'bg1' ? 1 : 0, transform: isFocusMode ? 'scale(1.02)' : 'scale(1.05)' }}
       />
       <div 
-        className="absolute inset-0 bg-cover bg-center transition-opacity duration-[2000ms] ease-in-out" 
-        style={{ backgroundImage: `url(${bg2})`, opacity: activeBg === 'bg2' ? 1 : 0, transform: 'scale(1.05)' }}
+        className="absolute inset-0 bg-cover bg-center transition-all duration-[2000ms] ease-[cubic-bezier(0.2,0,0,1)]" 
+        style={{ backgroundImage: `url(${bg2})`, opacity: activeBg === 'bg2' ? 1 : 0, transform: isFocusMode ? 'scale(1.02)' : 'scale(1.05)' }}
       />
       {/* Minimal Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-black/40 pointer-events-none backdrop-blur-[1px]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60 pointer-events-none" />
       
       <div className="relative z-10 w-full h-full flex flex-col items-center p-8 md:p-16 overflow-hidden">
         {/* Center Content - Greeting, Clock, Quote */}
-        <div className={`flex flex-col items-center justify-center space-y-6 flex-grow text-center w-full max-w-5xl transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] ${isFocusMode ? 'scale-105' : 'scale-100'}`}>
-            <Suspense fallback={<div className="h-10" />}>
-              <div className={`transition-all duration-1000 ease-out delay-100 ${isFocusMode ? 'opacity-80' : 'opacity-100'}`}>
+        <div className={`flex flex-col items-center justify-center space-y-6 flex-grow text-center w-full max-w-6xl transition-all duration-[1200ms] cubic-bezier(0.2,0,0,1) ${isFocusMode ? 'scale-110 translate-y-[-20px]' : 'scale-100'}`}>
+            <Suspense fallback={<div className="h-8" />}>
+              <div className={`transition-all duration-1000 ease-out delay-100 ${isFocusMode ? 'opacity-40 blur-sm' : 'opacity-100'}`}>
                   <Greeting />
               </div>
             </Suspense>
             
-            <div className="py-2">
+            <div className="py-2 relative z-20">
                 <Clock clockFormat={clockFormat} />
             </div>
             
-            <div className={`transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] w-full ${isFocusMode ? 'opacity-0 pointer-events-none translate-y-4 blur-md' : 'opacity-100'}`}>
+            <div className={`transition-all duration-1000 ease-[cubic-bezier(0.2,0,0,1)] w-full ${isFocusMode ? 'opacity-0 pointer-events-none translate-y-8 blur-md' : 'opacity-100'}`}>
               {widgetOrder.includes('quote') && <QuoteDisplay quoteData={quoteData} isLoading={isQuoteLoading} onRefresh={refreshQuote} />}
             </div>
         </div>
@@ -237,8 +237,8 @@ const App: React.FC = () => {
         {/* Widgets Grid */}
         {activeGridWidgets.length > 0 && (
           <div 
-            className={`w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10 max-w-6xl transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] ${isFocusMode ? 'opacity-0 pointer-events-none translate-y-20 blur-lg scale-95' : 'opacity-100 translate-y-0 scale-100'}`} 
-            style={{ maxHeight: '40vh' }}
+            className={`w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4 max-w-7xl transition-all duration-[1000ms] cubic-bezier(0.2,0,0,1) ${isFocusMode ? 'opacity-0 pointer-events-none translate-y-32 blur-xl scale-95' : 'opacity-100 translate-y-0 scale-100'}`} 
+            style={{ maxHeight: '45vh' }}
           >
             {activeGridWidgets.map((widget, index) => {
                 const WidgetContent = widgetMap[widget.id];
@@ -259,8 +259,8 @@ const App: React.FC = () => {
                         onDragOver={handleDragOver}
                         onDrop={(e) => handleDrop(e, widget.id)}
                         onDragEnd={handleDragEnd}
-                        className={`transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${isExiting ? 'opacity-0 scale-90 blur-md' : ''} ${isBeingDragged ? 'opacity-30 scale-95' : 'opacity-100'} ${colSpanClass} ${!isExiting ? 'cursor-grab active:cursor-grabbing' : ''}`}
-                        style={{ animation: !isExiting ? `fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${index * 100}ms forwards` : undefined, opacity: 0 }}
+                        className={`transition-all duration-700 ease-[cubic-bezier(0.2,0,0,1)] ${isExiting ? 'opacity-0 scale-75 blur-xl' : ''} ${isBeingDragged ? 'opacity-40 scale-95 grayscale' : 'opacity-100'} ${colSpanClass} ${!isExiting ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                        style={{ animation: !isExiting ? `fadeInUp 0.8s cubic-bezier(0.2, 0, 0, 1) ${index * 100}ms forwards` : undefined, opacity: 0 }}
                     >
                         <WidgetComponent
                             title={widget.name}
@@ -280,24 +280,24 @@ const App: React.FC = () => {
         )}
       </div>
 
-      {/* Footer Controls */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
+      {/* Footer Controls - Float & Glass */}
+      <div className="fixed bottom-8 right-8 z-50 flex flex-col gap-4">
         <button
           onClick={() => setIsFocusMode(prev => !prev)}
-          className={`w-10 h-10 flex items-center justify-center rounded-full text-white transition-all duration-500 backdrop-blur-md border shadow-2xl
-            ${isFocusMode ? 'bg-white/20 border-white/30 rotate-180' : 'bg-black/30 border-white/5 hover:bg-white/10'}`}
-          aria-label="Toggle Focus Mode (F)"
+          className={`w-12 h-12 flex items-center justify-center rounded-full text-white transition-all duration-700 cubic-bezier(0.2,0,0,1) backdrop-blur-2xl border shadow-2xl hover:scale-110 active:scale-95
+            ${isFocusMode ? 'bg-white/10 border-white/20 rotate-180 text-white/90' : 'bg-black/20 border-white/5 hover:bg-white/10 text-white/40 hover:text-white'}`}
+          aria-label="Toggle Zen Mode"
           title="Zen Mode"
         >
-          <ZenIcon className="w-4 h-4" />
+          <ZenIcon className="w-5 h-5" />
         </button>
         <button
           onClick={() => setIsSettingsOpen(true)}
-          className={`w-10 h-10 flex items-center justify-center bg-black/30 backdrop-blur-md rounded-full text-white hover:bg-white/10 transition-all duration-300 shadow-2xl border border-white/5 ${isFocusMode ? 'translate-y-20 opacity-0' : ''}`}
+          className={`w-12 h-12 flex items-center justify-center bg-black/20 backdrop-blur-2xl rounded-full hover:bg-white/10 transition-all duration-700 cubic-bezier(0.2,0,0,1) shadow-2xl border border-white/5 text-white/40 hover:text-white hover:scale-110 active:scale-95 ${isFocusMode ? 'translate-y-32 opacity-0' : ''}`}
           aria-label="Open Settings"
           title="Settings"
         >
-          <SettingsIcon className="w-4 h-4" />
+          <SettingsIcon className="w-5 h-5" />
         </button>
       </div>
 

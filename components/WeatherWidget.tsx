@@ -28,7 +28,7 @@ const WeatherWidget: React.FC = () => {
         const data = await fetchWeatherData();
         setWeather(data);
       } catch (err: any) {
-        setError(err.message || 'Failed to fetch weather.');
+        setError(err.message || 'Weather unavailable');
       } finally {
         setLoading(false);
       }
@@ -38,35 +38,40 @@ const WeatherWidget: React.FC = () => {
 
   if (loading) {
     return (
-        <div className="flex items-center justify-center h-full">
-             <div className="flex space-x-1">
-                <div className="w-1 h-1 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
-                <div className="w-1 h-1 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                <div className="w-1 h-1 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-             </div>
+        <div className="flex items-center justify-center h-full opacity-20">
+             <div className="w-5 h-5 border border-white/30 border-t-white rounded-full animate-spin" />
         </div>
     );
   }
   
   if (error) {
-    return <p className="text-xs text-red-400/60 mt-2 text-center font-light">{error}</p>;
+    return <div className="h-full flex items-center justify-center text-xs text-white/20 font-light tracking-wide">{error}</div>;
   }
 
   if (weather) {
     return (
-      <div className="flex flex-col justify-between h-full p-1">
-        <div className="flex justify-between items-start">
-            <div className="flex flex-col">
-                 <span className="text-5xl font-thin tracking-tighter text-white leading-none -ml-1">{Math.round(weather.temperature)}°</span>
-                 <span className="text-xs text-white/40 mt-2 font-light tracking-wide capitalize">{weather.description}</span>
-            </div>
-            <div className="text-white/80 opacity-60 scale-125 origin-top-right">
-                {weatherIcons[weather.icon]}
+      <div className="flex flex-col h-full relative overflow-hidden group p-2">
+        {/* Ambient Icon Background */}
+        <div className="absolute -right-8 -top-8 text-white/[0.02] transform scale-[5] blur-sm transition-transform duration-[2000ms] group-hover:scale-[5.5] group-hover:text-white/[0.04]">
+             {weatherIcons[weather.icon]}
+        </div>
+
+        <div className="flex-grow flex flex-col justify-center z-10">
+            <div className="flex items-start justify-between w-full">
+                 <div className="flex flex-col">
+                    <span className="text-7xl md:text-8xl font-thin tracking-tighter text-white leading-none">{Math.round(weather.temperature)}°</span>
+                    <span className="text-sm text-white/30 mt-1 font-light tracking-widest uppercase ml-1">{weather.description}</span>
+                 </div>
+                 <div className="text-white/70 opacity-80 transform scale-125 mt-2">
+                    {weatherIcons[weather.icon]}
+                 </div>
             </div>
         </div>
-        <div className="mt-auto pt-4 border-t border-white/5">
-            <div className="flex items-center justify-between">
-                <span className="text-[9px] uppercase tracking-[0.2em] text-white/30 font-medium truncate max-w-[150px]">{weather.location}</span>
+        
+        <div className="mt-auto z-10">
+            <div className="flex items-center space-x-2 opacity-40 group-hover:opacity-100 transition-opacity duration-500">
+                <div className="w-1 h-1 rounded-full bg-white/50 animate-pulse"></div>
+                <span className="text-[9px] uppercase tracking-[0.25em] text-white/80 font-medium truncate">{weather.location}</span>
             </div>
         </div>
       </div>
