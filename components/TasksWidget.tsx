@@ -2,9 +2,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { Task, TaskPriority } from '../types';
-import { PlusIcon, TrashIcon } from './icons';
+import { PlusIcon, TrashIcon, CalendarIcon, ListIcon, ChevronLeftIcon, ChevronRightIcon } from './icons';
 
 type SortBy = 'priority' | 'dueDate' | 'createdAt' | 'manual';
+type ViewMode = 'list' | 'calendar';
 
 const priorityColors: Record<TaskPriority, string> = {
   high: 'bg-rose-400/90 shadow-[0_0_10px_rgba(244,63,94,0.4)]',
@@ -26,8 +27,12 @@ const TasksWidget: React.FC = () => {
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTaskText, setEditingTaskText] = useState('');
   const [isInputFocused, setIsInputFocused] = useState(false);
-  
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  
+  // Calendar State
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   useEffect(() => {
     if (tasks.length > 0 && (typeof tasks[0].priority === 'undefined' || typeof tasks[0].createdAt === 'undefined')) {
@@ -42,6 +47,10 @@ const TasksWidget: React.FC = () => {
     }
   }, []);
 
+  const formatDate = (date: Date) => {
+      return date.toISOString().split('T')[0];
+  };
+
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
     if (newTaskText.trim()) {
@@ -51,7 +60,7 @@ const TasksWidget: React.FC = () => {
         completed: false,
         priority: newPriority,
         createdAt: Date.now(),
-        dueDate: null,
+        dueDate: viewMode === 'calendar' ? formatDate(selectedDate) : null,
       };
       setTasks([newTask, ...tasks]);
       setNewTaskText('');
@@ -136,26 +145,75 @@ const TasksWidget: React.FC = () => {
     newTasks.splice(targetIndex, 0, removed);
 
     setTasks(newTasks);
-    setSortBy('manual'); 
+    if (viewMode === 'list') setSortBy('manual'); 
   };
 
-  const sortedTasks = useMemo(() => {
+  // Logic for displaying tasks based on view mode
+  const displayedTasks = useMemo(() => {
+    let filtered = tasks;
+    if (viewMode === 'calendar') {
+        const dateStr = formatDate(selectedDate);
+        filtered = tasks.filter(t => t.dueDate === dateStr);
+    }
+
     const priorityOrder: Record<TaskPriority, number> = { high: 1, medium: 2, low: 3 };
-    return [...tasks].sort((a, b) => {
+    return [...filtered].sort((a, b) => {
       if (a.completed !== b.completed) return a.completed ? 1 : -1;
-      if (sortBy === 'manual') return 0;
+      // In calendar mode, we usually want simple list behavior or manual if user dragged
+      if (viewMode === 'list' && sortBy === 'manual') return 0; 
       if (sortBy === 'priority') return priorityOrder[a.priority] - priorityOrder[b.priority];
       return b.createdAt - a.createdAt;
     });
-  }, [tasks, sortBy]);
+  }, [tasks, sortBy, viewMode, selectedDate]);
 
-  const activeTasks = sortedTasks.filter(task => !task.completed);
-  const completedTasks = sortedTasks.filter(task => task.completed);
+  const activeTasks = displayedTasks.filter(task => !task.completed);
+  const completedTasks = displayedTasks.filter(task => task.completed);
+
+  // Calendar Helpers
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDay = new Date(year, month, 1).getDay();
+    return { daysInMonth, firstDay };
+  };
+
+  const changeMonth = (increment: number) => {
+    const newDate = new Date(currentMonth);
+    newDate.setMonth(newDate.getMonth() + increment);
+    setCurrentMonth(newDate);
+  };
+
+  const { daysInMonth, firstDay } = getDaysInMonth(currentMonth);
+
+  const calendarDays = Array.from({ length: 42 }, (_, i) => {
+      const dayNumber = i - firstDay + 1;
+      if (dayNumber > 0 && dayNumber <= daysInMonth) {
+          const currentDateStr = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), dayNumber).toISOString().split('T')[0];
+          const tasksForDay = tasks.filter(t => t.dueDate === currentDateStr && !t.completed);
+          return { day: dayNumber, dateStr: currentDateStr, tasks: tasksForDay };
+      }
+      return null;
+  });
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Minimal Input */}
-      <div className="relative mb-4 group/input">
+    <div className="flex flex-col h-full relative">
+       {/* Header Toolbar */}
+      <div className="flex justify-end mb-2 shrink-0">
+          <button 
+            onClick={() => setViewMode(prev => prev === 'list' ? 'calendar' : 'list')}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/5 text-white/40 hover:text-white transition-all active:scale-95 group"
+            title={viewMode === 'list' ? "Switch to Calendar" : "Switch to List"}
+          >
+              <span className="text-[10px] font-medium uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity -mr-2 group-hover:mr-0 duration-300">
+                {viewMode === 'list' ? 'Calendar' : 'List'}
+              </span>
+              {viewMode === 'list' ? <CalendarIcon className="w-3.5 h-3.5" /> : <ListIcon className="w-3.5 h-3.5" />}
+          </button>
+      </div>
+
+      {/* Input Area - Context Aware */}
+      <div className="relative mb-4 group/input flex-shrink-0">
         <form onSubmit={handleAddTask} className="relative flex items-center">
             <input
                 type="text"
@@ -163,7 +221,7 @@ const TasksWidget: React.FC = () => {
                 onChange={(e) => setNewTaskText(e.target.value)}
                 onFocus={() => setIsInputFocused(true)}
                 onBlur={() => !newTaskText && setIsInputFocused(false)}
-                placeholder="Add new task"
+                placeholder={viewMode === 'calendar' ? `Add task for ${selectedDate.toLocaleDateString([], { month: 'short', day: 'numeric'})}` : "Add new task"}
                 className="w-full bg-transparent border-b border-white/5 text-sm font-light focus:outline-none py-2 px-1 placeholder-white/10 transition-all duration-500"
                 style={{ borderColor: isInputFocused ? 'var(--accent-color)' : undefined }}
             />
@@ -180,85 +238,154 @@ const TasksWidget: React.FC = () => {
         </form>
       </div>
 
-      {/* Task List */}
-      <ul className="space-y-1 overflow-visible flex-grow">
-        {activeTasks.map((task, idx) => (
-            <li 
-              key={task.id} 
-              className={`group flex items-center py-2 -mx-2 px-3 rounded-lg transition-all duration-500 hover:bg-white/[0.02] ${draggedTaskId === task.id ? 'opacity-30' : 'opacity-100'}`}
-              draggable
-              onDragStart={(e) => handleDragStart(e, task.id)}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, task)}
-              onDragEnd={() => setDraggedTaskId(null)}
-              style={{ animation: `fadeInUp 0.4s cubic-bezier(0.2,0,0,1) ${idx * 50}ms forwards` }}
-            >
-            {/* Priority Dot */}
-            <button 
-                onClick={() => changePriority(task.id)} 
-                className={`flex-shrink-0 w-1.5 h-1.5 rounded-full mr-4 transition-all duration-500 opacity-40 group-hover:opacity-100 ${priorityColors[task.priority]}`}
-            />
-            
-            {/* Custom Checkbox */}
-            <div 
-                className="flex-shrink-0 mr-3 cursor-pointer relative group/check w-4 h-4 flex items-center justify-center"
-                onClick={() => toggleTask(task.id)}
-            >
-                <div className="w-3.5 h-3.5 rounded-full border border-white/10 transition-all duration-300 group-hover/check:border-white/50 group-hover/check:scale-110" />
-            </div>
-            
-            <div className="flex-grow min-w-0">
-                {editingTaskId === task.id ? (
-                <input
-                    type="text"
-                    value={editingTaskText}
-                    onChange={(e) => setEditingTaskText(e.target.value)}
-                    onBlur={handleSaveEdit}
-                    onKeyDown={handleEditKeyDown}
-                    className="w-full bg-transparent border-b border-white/20 text-sm font-light focus:outline-none py-0"
-                    style={{ borderColor: 'var(--accent-color)' }}
-                    autoFocus
-                />
-                ) : (
-                <span
-                    className="block text-sm font-light text-white/80 cursor-pointer truncate transition-colors duration-300 hover:text-white"
-                    onClick={() => handleStartEditing(task)}
-                >
-                    {task.text}
+      {/* Calendar Grid */}
+      {viewMode === 'calendar' && (
+          <div className="mb-4 animate-fadeIn">
+             <div className="flex items-center justify-between mb-2 px-1">
+                <button onClick={() => changeMonth(-1)} className="text-white/30 hover:text-white transition-colors p-1 hover:bg-white/5 rounded"><ChevronLeftIcon className="w-3 h-3" /></button>
+                <span className="text-xs font-medium tracking-widest uppercase text-white/70">
+                    {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
                 </span>
-                )}
-            </div>
-            
-            {/* Actions */}
-            <button onClick={() => deleteTask(task.id)} className="ml-2 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-white/10 hover:text-red-400">
-              <TrashIcon className="w-3.5 h-3.5" />
-            </button>
-          </li>
-        ))}
-        
-        {completedTasks.length > 0 && (
-          <div className="pt-6 pb-2">
-             <div className="text-[9px] uppercase tracking-[0.25em] text-white/10 mb-2 pl-2 font-bold">Done</div>
-             {completedTasks.map((task) => (
-                 <li key={task.id} className="group flex items-center py-1.5 opacity-30 hover:opacity-60 transition-opacity duration-300 px-1">
-                    <div className="w-1 h-1 mr-4 rounded-full bg-white/10" />
+                <button onClick={() => changeMonth(1)} className="text-white/30 hover:text-white transition-colors p-1 hover:bg-white/5 rounded"><ChevronRightIcon className="w-3 h-3" /></button>
+             </div>
+             <div className="grid grid-cols-7 gap-1 text-center mb-1">
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => (
+                    <span key={d} className="text-[9px] text-white/20 font-bold">{d}</span>
+                ))}
+             </div>
+             <div className="grid grid-cols-7 gap-1">
+                {calendarDays.map((cell, idx) => {
+                    if (!cell) return <div key={idx} className="aspect-square"></div>;
+                    const isSelected = cell.dateStr === formatDate(selectedDate);
+                    const isToday = cell.dateStr === formatDate(new Date());
+                    const hasTasks = cell.tasks.length > 0;
+                    
+                    return (
+                        <button
+                            key={idx}
+                            onClick={() => {
+                                setSelectedDate(new Date(cell.dateStr + 'T00:00:00')); // Fix timezone issue roughly
+                            }}
+                            className={`aspect-square rounded-md flex flex-col items-center justify-center relative transition-all duration-300 hover:bg-white/5 group/day ${isSelected ? 'bg-white/10 ring-1 ring-white/20 shadow-inner' : ''}`}
+                        >
+                            <span className={`text-[10px] ${isSelected ? 'text-white font-semibold' : isToday ? 'text-[var(--accent-color)] font-bold' : 'text-white/50 font-light group-hover/day:text-white/80'}`}>
+                                {cell.day}
+                            </span>
+                            {hasTasks && (
+                                <div className="flex gap-0.5 mt-0.5">
+                                    {cell.tasks.slice(0, 3).map(t => (
+                                        <div key={t.id} className={`w-0.5 h-0.5 rounded-full ${priorityColors[t.priority]}`} />
+                                    ))}
+                                </div>
+                            )}
+                        </button>
+                    )
+                })}
+             </div>
+             <div className="my-3 h-[1px] bg-white/5 w-full"></div>
+             <div className="text-[10px] uppercase tracking-widest text-white/30 mb-2 px-1 flex items-center justify-between">
+                 <span>Tasks for {selectedDate.toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+                 {viewMode === 'calendar' && selectedDate.toDateString() === new Date().toDateString() && <span className="text-[var(--accent-color)]">Today</span>}
+             </div>
+          </div>
+      )}
+
+      {/* Task List */}
+      <ul className="space-y-1 overflow-visible flex-grow pb-2">
+        {activeTasks.length === 0 && completedTasks.length === 0 ? (
+             <div className="flex items-center justify-center h-16 text-white/20 text-xs font-light italic">
+                 {viewMode === 'calendar' ? 'No tasks scheduled.' : 'No tasks yet.'}
+             </div>
+        ) : (
+            <>
+                {activeTasks.map((task, idx) => (
+                    <li 
+                    key={task.id} 
+                    className={`group flex items-center py-2 -mx-2 px-3 rounded-lg transition-all duration-500 hover:bg-white/[0.02] ${draggedTaskId === task.id ? 'opacity-30' : 'opacity-100'}`}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, task.id)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, task)}
+                    onDragEnd={() => setDraggedTaskId(null)}
+                    style={{ animation: `fadeInUp 0.4s cubic-bezier(0.2,0,0,1) ${idx * 50}ms forwards` }}
+                    >
+                    <button 
+                        onClick={() => changePriority(task.id)} 
+                        className={`flex-shrink-0 w-1.5 h-1.5 rounded-full mr-4 transition-all duration-500 opacity-40 group-hover:opacity-100 ${priorityColors[task.priority]}`}
+                    />
+                    
                     <div 
-                        className="mr-3 cursor-pointer w-4 h-4 flex items-center justify-center"
+                        className="flex-shrink-0 mr-3 cursor-pointer relative group/check w-4 h-4 flex items-center justify-center"
                         onClick={() => toggleTask(task.id)}
                     >
-                         <div className="w-3.5 h-3.5 rounded-full bg-white/5 flex items-center justify-center border border-white/5">
-                            <div className="w-1.5 h-1.5 bg-white/40 rounded-full" />
-                         </div>
+                        <div className="w-3.5 h-3.5 rounded-full border border-white/10 transition-all duration-300 group-hover/check:border-white/50 group-hover/check:scale-110" />
                     </div>
-                    <span className="text-sm font-light line-through text-white/50 decoration-white/10 flex-grow truncate">
-                      {task.text}
-                    </span>
-                    <button onClick={() => deleteTask(task.id)} className="ml-2 hover:text-white transition-colors">
-                      <TrashIcon className="w-3 h-3" />
+                    
+                    <div className="flex-grow min-w-0 flex flex-col">
+                        {editingTaskId === task.id ? (
+                        <input
+                            type="text"
+                            value={editingTaskText}
+                            onChange={(e) => setEditingTaskText(e.target.value)}
+                            onBlur={handleSaveEdit}
+                            onKeyDown={handleEditKeyDown}
+                            className="w-full bg-transparent border-b border-white/20 text-sm font-light focus:outline-none py-0"
+                            style={{ borderColor: 'var(--accent-color)' }}
+                            autoFocus
+                        />
+                        ) : (
+                        <span
+                            className="block text-sm font-light text-white/80 cursor-pointer truncate transition-colors duration-300 hover:text-white"
+                            onClick={() => handleStartEditing(task)}
+                        >
+                            {task.text}
+                        </span>
+                        )}
+                        {/* Show due date if in list mode and it exists */}
+                        {viewMode === 'list' && task.dueDate && (
+                             <span className="text-[9px] text-white/30 mt-0.5">{new Date(task.dueDate + 'T12:00:00').toLocaleDateString(undefined, {month:'short', day:'numeric'})}</span>
+                        )}
+                    </div>
+                    
+                    <button onClick={() => deleteTask(task.id)} className="ml-2 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-white/10 hover:text-red-400">
+                    <TrashIcon className="w-3.5 h-3.5" />
                     </button>
-                 </li>
-             ))}
-          </div>
+                </li>
+                ))}
+                
+                {completedTasks.length > 0 && (
+                <div className="pt-6 pb-2">
+                    <div className="text-[9px] uppercase tracking-[0.25em] text-white/10 mb-2 pl-2 font-bold">Done</div>
+                    {completedTasks.map((task) => (
+                        <li 
+                            key={task.id} 
+                            className={`group flex items-center py-1.5 px-1 transition-all duration-300 ${draggedTaskId === task.id ? 'opacity-10' : 'opacity-30 hover:opacity-60'}`}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, task.id)}
+                            onDragOver={handleDragOver}
+                            onDrop={(e) => handleDrop(e, task)}
+                            onDragEnd={() => setDraggedTaskId(null)}
+                        >
+                            <div className="w-1 h-1 mr-4 rounded-full bg-white/10" />
+                            <div 
+                                className="mr-3 cursor-pointer w-4 h-4 flex items-center justify-center"
+                                onClick={() => toggleTask(task.id)}
+                            >
+                                <div className="w-3.5 h-3.5 rounded-full bg-white/5 flex items-center justify-center border border-white/5">
+                                    <div className="w-1.5 h-1.5 bg-white/40 rounded-full" />
+                                </div>
+                            </div>
+                            <span className="text-sm font-light line-through text-white/50 decoration-white/10 flex-grow truncate">
+                            {task.text}
+                            </span>
+                            <button onClick={() => deleteTask(task.id)} className="ml-2 hover:text-white transition-colors">
+                            <TrashIcon className="w-3 h-3" />
+                            </button>
+                        </li>
+                    ))}
+                </div>
+                )}
+            </>
         )}
       </ul>
     </div>
