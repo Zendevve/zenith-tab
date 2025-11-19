@@ -7,8 +7,8 @@ export const curatedBackgrounds = [
   },
   {
     id: 'abstract-architecture',
-    url: 'https://images.unsplash.com/photo-1528952643249-c1a8a29e46a5?auto=format&fit=crop&w=1920&q=80',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1528952643249-c1a8a29e46a5?auto=format&fit=crop&w=200&q=80',
+    url: 'https://images.unsplash.com/photo-1486718448742-163732cd1544?auto=format&fit=crop&w=1920&q=80',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1486718448742-163732cd1544?auto=format&fit=crop&w=200&q=80',
   },
   {
     id: 'misty-forest',
