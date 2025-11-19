@@ -164,7 +164,8 @@ const TasksWidget: React.FC = () => {
                 onFocus={() => setIsInputFocused(true)}
                 onBlur={() => !newTaskText && setIsInputFocused(false)}
                 placeholder="Add new task"
-                className="w-full bg-transparent border-b border-white/5 text-sm font-light focus:border-white/20 focus:outline-none py-2 px-1 placeholder-white/10 transition-all duration-500"
+                className="w-full bg-transparent border-b border-white/5 text-sm font-light focus:outline-none py-2 px-1 placeholder-white/10 transition-all duration-500"
+                style={{ borderColor: isInputFocused ? 'var(--accent-color)' : undefined }}
             />
             <div className={`absolute right-0 flex items-center transition-all duration-500 ${isInputFocused || newTaskText ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2 pointer-events-none'}`}>
                  <button 
@@ -215,6 +216,7 @@ const TasksWidget: React.FC = () => {
                     onBlur={handleSaveEdit}
                     onKeyDown={handleEditKeyDown}
                     className="w-full bg-transparent border-b border-white/20 text-sm font-light focus:outline-none py-0"
+                    style={{ borderColor: 'var(--accent-color)' }}
                     autoFocus
                 />
                 ) : (

@@ -18,8 +18,11 @@ const Widget: React.FC<WidgetProps> = ({ title, children, widgetId, size, onSize
 
   return (
     <div className="group/widget relative h-full flex flex-col transition-all duration-700 cubic-bezier(0.2, 0, 0, 1)">
-      {/* Premium Glass Background Layer */}
-      <div className="absolute inset-0 bg-black/20 backdrop-blur-2xl rounded-[2rem] border border-white/5 shadow-lg transition-all duration-700 group-hover/widget:bg-black/30 group-hover/widget:border-white/10 group-hover/widget:shadow-[0_20px_40px_rgba(0,0,0,0.4)]"></div>
+      {/* Premium Glass Background Layer with CSS Variable Opacity */}
+      <div 
+        className="absolute inset-0 backdrop-blur-2xl rounded-[2rem] border border-white/5 shadow-lg transition-all duration-700 group-hover/widget:border-white/10 group-hover/widget:shadow-[0_20px_40px_rgba(0,0,0,0.4)]"
+        style={{ backgroundColor: `rgba(0, 0, 0, var(--glass-opacity))` }}
+      ></div>
 
       {/* Content Layer */}
       <div className="relative z-10 flex flex-col h-full p-6">

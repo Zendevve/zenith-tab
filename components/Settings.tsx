@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { WidgetId, Widget, BackgroundSetting, FontOption } from '../types';
+import { WidgetId, Widget, BackgroundSetting, FontOption, ThemeSettings } from '../types';
 import { curatedBackgrounds } from '../constants/backgrounds';
 import { XIcon, ShuffleIcon, UploadIcon } from './icons';
 import { useLocalStorage } from '../hooks/useLocalStorage';
@@ -17,6 +17,8 @@ interface SettingsPanelProps {
   setClockFormat: React.Dispatch<React.SetStateAction<'12h' | '24h'>>;
   font: FontOption;
   setFont: React.Dispatch<React.SetStateAction<FontOption>>;
+  themeSettings: ThemeSettings;
+  setThemeSettings: React.Dispatch<React.SetStateAction<ThemeSettings>>;
 }
 
 const fontOptions: { label: string; value: FontOption }[] = [
@@ -25,6 +27,15 @@ const fontOptions: { label: string; value: FontOption }[] = [
     { label: 'Montserrat', value: 'Montserrat' },
     { label: 'Playfair', value: 'Playfair Display' },
     { label: 'Mono', value: 'Roboto Mono' },
+];
+
+const accentPresets = [
+    '#2563eb', // Blue
+    '#7c3aed', // Violet
+    '#db2777', // Pink
+    '#ea580c', // Orange
+    '#059669', // Emerald
+    '#475569', // Slate
 ];
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({ 
@@ -38,7 +49,9 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   clockFormat,
   setClockFormat,
   font,
-  setFont
+  setFont,
+  themeSettings,
+  setThemeSettings
 }) => {
   const [name, setName] = useLocalStorage('user_name', '');
 
@@ -46,7 +59,6 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     if (enabledWidgets.includes(id)) {
       setEnabledWidgets(enabledWidgets.filter((wId) => wId !== id));
     } else {
-      // Add non-quote widgets to the end, quote to the beginning
       if (id === 'quote') {
         setEnabledWidgets([id, ...enabledWidgets]);
       } else {
@@ -74,6 +86,14 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
       setBackgroundSetting({ type: 'color', color: e.target.value });
   };
 
+  const handleAccentChange = (color: string) => {
+      setThemeSettings(prev => ({ ...prev, accentColor: color }));
+  };
+
+  const handleOpacityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setThemeSettings(prev => ({ ...prev, glassOpacity: parseFloat(e.target.value) }));
+  };
+
   return (
     <>
       <div 
@@ -86,7 +106,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="settings-title"
-        style={{ fontFamily: 'Inter, sans-serif' }} // Keep settings legible in default font
+        style={{ fontFamily: 'Inter, sans-serif' }}
       >
         <div className="p-6 h-full overflow-y-auto scrollbar-hide">
           <div className="flex justify-between items-center mb-6">
@@ -111,6 +131,53 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 </label>
             </div>
           </div>
+
+          <div className="mb-8">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-white/50 mb-4">Theme</h3>
+            <div className="space-y-6">
+                 <div>
+                     <span className="text-xs text-white/50 uppercase tracking-wider mb-2 block">Accent Color</span>
+                     <div className="flex flex-wrap gap-3">
+                         {accentPresets.map(color => (
+                             <button
+                                 key={color}
+                                 onClick={() => handleAccentChange(color)}
+                                 className={`w-8 h-8 rounded-full border transition-all ${themeSettings.accentColor === color ? 'scale-110 border-white shadow-lg' : 'border-transparent hover:scale-105'}`}
+                                 style={{ backgroundColor: color }}
+                             />
+                         ))}
+                         <div className="relative">
+                             <div 
+                                 className={`w-8 h-8 rounded-full border transition-all flex items-center justify-center overflow-hidden bg-gradient-to-br from-white/10 to-white/30 ${!accentPresets.includes(themeSettings.accentColor) ? 'scale-110 border-white shadow-lg' : 'border-transparent hover:scale-105'}`}
+                             >
+                                <div className="w-full h-full" style={{ backgroundColor: themeSettings.accentColor }}></div>
+                             </div>
+                             <input 
+                                 type="color" 
+                                 value={themeSettings.accentColor}
+                                 onChange={(e) => handleAccentChange(e.target.value)}
+                                 className="absolute inset-0 opacity-0 cursor-pointer"
+                             />
+                         </div>
+                     </div>
+                 </div>
+                 <div>
+                     <div className="flex justify-between items-center mb-2">
+                        <span className="text-xs text-white/50 uppercase tracking-wider">Widget Opacity</span>
+                        <span className="text-xs text-white/50">{Math.round(themeSettings.glassOpacity * 100)}%</span>
+                     </div>
+                     <input 
+                        type="range" 
+                        min="0" 
+                        max="0.8" 
+                        step="0.05"
+                        value={themeSettings.glassOpacity}
+                        onChange={handleOpacityChange}
+                        className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-110"
+                     />
+                 </div>
+            </div>
+          </div>
           
           <div className="mb-8">
             <h3 className="text-sm font-bold uppercase tracking-wider text-white/50 mb-4">Typography</h3>
@@ -119,7 +186,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     <button
                         key={opt.value}
                         onClick={() => setFont(opt.value)}
-                        className={`p-3 rounded-lg text-left transition-all ${font === opt.value ? 'bg-blue-600 text-white shadow-lg scale-[1.02]' : 'bg-white/5 text-white/70 hover:bg-white/10'}`}
+                        className={`p-3 rounded-lg text-left transition-all border ${font === opt.value ? 'bg-[var(--accent-color)] border-[var(--accent-color)] text-white shadow-lg scale-[1.02]' : 'bg-white/5 border-transparent text-white/70 hover:bg-white/10'}`}
                     >
                         <span className="block text-lg leading-none mb-1" style={{ fontFamily: opt.value }}>Aa</span>
                         <span className="text-xs opacity-70">{opt.label}</span>
@@ -136,13 +203,13 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 <div className="flex items-center bg-black/40 rounded-lg p-1">
                   <button 
                     onClick={() => setClockFormat('12h')}
-                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${clockFormat === '12h' ? 'bg-blue-600 text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}`}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${clockFormat === '12h' ? 'bg-[var(--accent-color)] text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}`}
                   >
                     12h
                   </button>
                   <button 
                     onClick={() => setClockFormat('24h')}
-                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${clockFormat === '24h' ? 'bg-blue-600 text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}`}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${clockFormat === '24h' ? 'bg-[var(--accent-color)] text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}`}
                   >
                     24h
                   </button>
@@ -164,7 +231,10 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       checked={enabledWidgets.includes(widget.id)}
                       onChange={() => toggleWidget(widget.id)}
                     />
-                    <div className="w-9 h-5 bg-white/10 rounded-full peer peer-focus:ring-2 peer-focus:ring-blue-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div 
+                        className="w-9 h-5 bg-white/10 rounded-full peer peer-focus:ring-2 peer-focus:ring-white/20 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--accent-color)]"
+                        style={{ '--accent-color': themeSettings.accentColor } as React.CSSProperties}
+                    ></div>
                   </div>
                 </label>
               ))}
@@ -176,8 +246,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
               <div className="grid grid-cols-3 gap-3">
                   <button
                       onClick={() => setBackgroundSetting({ type: 'random' })}
-                      className={`relative aspect-square rounded-lg flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors focus:outline-none ${
-                          backgroundSetting.type === 'random' ? 'ring-2 ring-blue-500' : 'ring-1 ring-white/10'
+                      className={`relative aspect-square rounded-lg flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors focus:outline-none border ${
+                          backgroundSetting.type === 'random' ? 'border-[var(--accent-color)] ring-1 ring-[var(--accent-color)]' : 'border-transparent ring-1 ring-white/10'
                       }`}
                       aria-label="Set random background"
                   >
@@ -186,8 +256,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   </button>
 
                   <label
-                      className={`relative aspect-square rounded-lg flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors cursor-pointer focus-within:ring-2 focus-within:ring-blue-500 ${
-                          backgroundSetting.type === 'color' ? 'ring-2 ring-blue-500' : 'ring-1 ring-white/10'
+                      className={`relative aspect-square rounded-lg flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors cursor-pointer focus-within:ring-2 focus-within:ring-[var(--accent-color)] border ${
+                          backgroundSetting.type === 'color' ? 'border-[var(--accent-color)] ring-1 ring-[var(--accent-color)]' : 'border-transparent ring-1 ring-white/10'
                       }`}
                       title="Pick a solid color"
                   >
@@ -206,8 +276,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
                   <label
                       htmlFor="background-upload"
-                      className={`relative aspect-square rounded-lg flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors cursor-pointer overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 ${
-                          backgroundSetting.type === 'custom' ? 'ring-2 ring-blue-500' : 'ring-1 ring-white/10'
+                      className={`relative aspect-square rounded-lg flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors cursor-pointer overflow-hidden focus-within:ring-2 focus-within:ring-[var(--accent-color)] border ${
+                          backgroundSetting.type === 'custom' ? 'border-[var(--accent-color)] ring-1 ring-[var(--accent-color)]' : 'border-transparent ring-1 ring-white/10'
                       }`}
                       aria-label="Upload custom background"
                   >
@@ -230,8 +300,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       <button
                           key={bg.id}
                           onClick={() => setBackgroundSetting({ type: 'gallery', id: bg.id, url: bg.url })}
-                          className={`relative aspect-square rounded-lg bg-cover bg-center focus:outline-none overflow-hidden group ${
-                            backgroundSetting.type === 'gallery' && backgroundSetting.id === bg.id ? 'ring-2 ring-blue-500' : 'ring-1 ring-white/10'
+                          className={`relative aspect-square rounded-lg bg-cover bg-center focus:outline-none overflow-hidden group border ${
+                            backgroundSetting.type === 'gallery' && backgroundSetting.id === bg.id ? 'border-[var(--accent-color)] ring-1 ring-[var(--accent-color)]' : 'border-transparent ring-1 ring-white/10'
                           }`}
                           style={{ backgroundImage: `url(${bg.thumbnailUrl})` }}
                           aria-label={`Set background to ${bg.id}`}
@@ -243,7 +313,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
           </div>
           
           <div className="mt-8 text-center">
-             <p className="text-xs text-white/20">Zenith Tab v1.0</p>
+             <p className="text-xs text-white/20">Zenith Tab v1.1</p>
           </div>
         </div>
       </div>

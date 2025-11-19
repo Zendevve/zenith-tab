@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
-import { WidgetId, Widget, Quote, BackgroundSetting, FontOption } from './types';
+import { WidgetId, Widget, Quote, BackgroundSetting, FontOption, ThemeSettings } from './types';
 import { fetchInspirationalQuote } from './services/geminiService';
 import Clock from './components/Clock';
 import QuoteDisplay from './components/Quote';
@@ -49,6 +49,8 @@ const App: React.FC = () => {
   const [backgroundSetting, setBackgroundSetting] = useLocalStorage<BackgroundSetting>('background_setting', { type: 'random' });
   const [clockFormat, setClockFormat] = useLocalStorage<'12h' | '24h'>('clock_format', '12h');
   const [font, setFont] = useLocalStorage<FontOption>('app_font', 'Inter');
+  const [themeSettings, setThemeSettings] = useLocalStorage<ThemeSettings>('theme_settings', { accentColor: '#2563eb', glassOpacity: 0.2 });
+  
   const [draggedWidgetId, setDraggedWidgetId] = useState<WidgetId | null>(null);
   const [exitingWidgetIds, setExitingWidgetIds] = useState<Set<WidgetId>>(new Set());
 
@@ -212,7 +214,11 @@ const App: React.FC = () => {
   return (
     <main 
         className="relative w-screen h-screen overflow-hidden text-white bg-black selection:bg-white/30 selection:text-white transition-all duration-500"
-        style={{ fontFamily: `"${font}", sans-serif` }}
+        style={{ 
+          fontFamily: `"${font}", sans-serif`,
+          '--accent-color': themeSettings.accentColor,
+          '--glass-opacity': themeSettings.glassOpacity
+        } as React.CSSProperties}
     >
       {/* Background Layer for Images */}
       <div 
@@ -341,6 +347,8 @@ const App: React.FC = () => {
         setClockFormat={setClockFormat}
         font={font}
         setFont={setFont}
+        themeSettings={themeSettings}
+        setThemeSettings={setThemeSettings}
       />
     </main>
   );

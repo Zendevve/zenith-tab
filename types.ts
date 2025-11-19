@@ -9,6 +9,11 @@ export type BackgroundSetting =
 
 export type FontOption = 'Inter' | 'Roboto Mono' | 'Playfair Display' | 'Lato' | 'Montserrat';
 
+export interface ThemeSettings {
+  accentColor: string;
+  glassOpacity: number; // 0.0 to 1.0
+}
+
 export interface Widget {
   id: WidgetId;
   name: string;
