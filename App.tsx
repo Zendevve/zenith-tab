@@ -202,9 +202,10 @@ const App: React.FC = () => {
         const target = e.target as HTMLElement;
         if (target.closest('.overflow-y-auto')) return;
 
-        if (e.deltaY > 50) {
+        // Use a smaller threshold for better sensitivity on trackpads
+        if (e.deltaY > 30) {
             setCurrentPage(p => Math.min(p + 1, pages.length - 1));
-        } else if (e.deltaY < -50) {
+        } else if (e.deltaY < -30) {
             setCurrentPage(p => Math.max(p - 1, 0));
         }
     };
@@ -216,7 +217,7 @@ const App: React.FC = () => {
 
   return (
     <main 
-        className="relative w-screen h-screen overflow-hidden transition-none select-none"
+        className="relative w-screen h-screen overflow-hidden transition-none select-none flex flex-col"
         style={{ 
           '--accent-color': themeSettings.accentColor,
           '--fg-color': '#e5e5e5',
@@ -224,10 +225,10 @@ const App: React.FC = () => {
         } as React.CSSProperties}
     >
       
-      <div className="relative z-10 w-full h-full flex flex-col p-6 md:p-12 max-w-7xl mx-auto">
+      <div className="relative z-10 w-full h-full flex flex-col p-6 md:p-8 lg:p-12 max-w-7xl mx-auto">
         
         {/* Header Section */}
-        <header className={`flex-shrink-0 transition-all duration-700 mb-6 ${isFocusMode ? 'opacity-20 blur-sm' : 'opacity-100'}`}>
+        <header className={`flex-shrink-0 transition-all duration-700 mb-2 md:mb-6 ${isFocusMode ? 'opacity-20 blur-sm' : 'opacity-100'}`}>
             <Greeting />
             <Clock clockFormat={clockFormat} />
             {widgetOrder.includes('quote') && (
@@ -236,18 +237,19 @@ const App: React.FC = () => {
         </header>
 
         {/* Paginated Grid Area */}
-        <div className={`flex-grow relative w-full transition-opacity duration-500 ${isFocusMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+        <div className={`flex-grow relative w-full transition-opacity duration-500 min-h-0 ${isFocusMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
              {pages.map((pageWidgets, pageIndex) => (
                 <div 
                     key={pageIndex}
-                    className={`absolute inset-0 w-full h-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-all duration-500 transform ${
+                    className={`absolute inset-0 w-full h-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 transition-all duration-500 transform ${
                         pageIndex === currentPage 
                             ? 'opacity-100 translate-x-0 pointer-events-auto' 
                             : pageIndex < currentPage 
                                 ? 'opacity-0 -translate-x-10 pointer-events-none' 
                                 : 'opacity-0 translate-x-10 pointer-events-none'
-                    }`}
-                    style={{ gridTemplateRows: 'repeat(auto-fill, minmax(180px, 1fr))', alignContent: 'start' }}
+                    } grid-rows-3 lg:grid-rows-2`}
+                    // We removed the inline grid-template-rows logic in favor of Tailwind classes to ensure 
+                    // items stretch/shrink to fit exactly in the container height.
                 >
                     {pageWidgets.map((widget) => {
                         const WidgetContent = widgetMap[widget.id];
@@ -265,7 +267,7 @@ const App: React.FC = () => {
                                 onDragStart={(e) => handleDragStart(e, widget.id)}
                                 onDragOver={handleDragOver}
                                 onDrop={(e) => handleDrop(e, widget.id)}
-                                className={`${colSpanClass} h-full max-h-[300px]`}
+                                className={`${colSpanClass} h-full min-h-0 flex flex-col`}
                             >
                                 <WidgetComponent
                                     title={widget.name}
@@ -287,7 +289,7 @@ const App: React.FC = () => {
         
         {/* Pagination Dots */}
         {pages.length > 1 && !isFocusMode && (
-            <div className="flex justify-center space-x-3 mb-4 mt-2">
+            <div className="flex-shrink-0 flex justify-center space-x-3 mb-2 mt-4">
                 {pages.map((_, idx) => (
                     <button
                         key={idx}

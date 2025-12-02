@@ -27,6 +27,13 @@ export interface Task {
   dueDate: string | null;
 }
 
+export interface Note {
+  id: string;
+  title: string;
+  content: string;
+  updatedAt: number;
+}
+
 export interface Quote {
   quote: string;
   author: string;
