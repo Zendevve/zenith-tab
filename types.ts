@@ -1,5 +1,5 @@
 
-export type WidgetId = 'tasks' | 'notes' | 'weather' | 'quote' | 'ai_assistant';
+export type WidgetId = 'tasks' | 'notes' | 'weather' | 'quote' | 'ai_assistant' | 'links' | 'search';
 
 export type BackgroundSetting = 
   | { type: 'random' } 
@@ -40,4 +40,10 @@ export interface WeatherData {
   description: string;
   icon: 'sun' | 'cloud' | 'rain' | 'snow' | 'wind' | 'storm' | 'partly-cloudy' | 'fog';
   location: string;
+}
+
+export interface Link {
+  id: string;
+  title: string;
+  url: string;
 }

@@ -14,8 +14,12 @@ const NotesWidget = lazy(() => import('./components/NotesWidget'));
 const WeatherWidget = lazy(() => import('./components/WeatherWidget'));
 const Greeting = lazy(() => import('./components/Greeting'));
 const AIAssistantWidget = lazy(() => import('./components/AIAssistantWidget'));
+const LinksWidget = lazy(() => import('./components/LinksWidget'));
+const SearchWidget = lazy(() => import('./components/SearchWidget'));
 
 const allWidgets: Widget[] = [
+  { id: 'search', name: 'Search' },
+  { id: 'links', name: 'Quick Links' },
   { id: 'tasks', name: 'Tasks' },
   { id: 'notes', name: 'Notes' },
   { id: 'weather', name: 'Weather' },
@@ -28,6 +32,8 @@ const widgetMap: Record<WidgetId, React.LazyExoticComponent<React.FC<{}>>> = {
   notes: NotesWidget,
   weather: WeatherWidget,
   ai_assistant: AIAssistantWidget,
+  links: LinksWidget,
+  search: SearchWidget,
   quote: ({ children }) => <>{children}</> as any,
 };
 
@@ -44,8 +50,16 @@ const App: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
   
-  const [widgetOrder, setWidgetOrder] = useLocalStorage<WidgetId[]>('widget_order', ['quote', 'tasks']);
-  const [widgetSizes, setWidgetSizes] = useLocalStorage<Record<WidgetId, number>>('widget_sizes', { tasks: 1, notes: 1, weather: 1, quote: 1, ai_assistant: 2 });
+  const [widgetOrder, setWidgetOrder] = useLocalStorage<WidgetId[]>('widget_order', ['search', 'links', 'quote', 'tasks', 'weather']);
+  const [widgetSizes, setWidgetSizes] = useLocalStorage<Record<WidgetId, number>>('widget_sizes', { 
+      tasks: 1, 
+      notes: 1, 
+      weather: 1, 
+      quote: 1, 
+      ai_assistant: 2,
+      links: 1,
+      search: 2 
+  });
   const [backgroundSetting, setBackgroundSetting] = useLocalStorage<BackgroundSetting>('background_setting', { type: 'random' });
   const [clockFormat, setClockFormat] = useLocalStorage<'12h' | '24h'>('clock_format', '12h');
   const [font, setFont] = useLocalStorage<FontOption>('app_font', 'Inter');
@@ -137,7 +151,8 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key.toLowerCase() === 'f') {
+        // Only trigger focus mode if not typing in input
+        if (e.key.toLowerCase() === 'f' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
             setIsFocusMode(prev => !prev);
         }
         if (e.key === 'Escape') {
