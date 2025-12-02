@@ -1,8 +1,7 @@
 
 import React from 'react';
-import { WidgetId, Widget, BackgroundSetting, FontOption, ThemeSettings } from '../types';
-import { curatedBackgrounds } from '../constants/backgrounds';
-import { XIcon, ShuffleIcon, UploadIcon } from './icons';
+import { WidgetId, Widget, ThemeSettings } from '../types';
+import { XIcon } from './icons';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 interface SettingsPanelProps {
@@ -11,47 +10,14 @@ interface SettingsPanelProps {
   allWidgets: Widget[];
   enabledWidgets: WidgetId[];
   setEnabledWidgets: React.Dispatch<React.SetStateAction<WidgetId[]>>;
-  backgroundSetting: BackgroundSetting;
-  setBackgroundSetting: React.Dispatch<React.SetStateAction<BackgroundSetting>>;
-  clockFormat: '12h' | '24h';
-  setClockFormat: React.Dispatch<React.SetStateAction<'12h' | '24h'>>;
-  font: FontOption;
-  setFont: React.Dispatch<React.SetStateAction<FontOption>>;
   themeSettings: ThemeSettings;
   setThemeSettings: React.Dispatch<React.SetStateAction<ThemeSettings>>;
 }
 
-const fontOptions: { label: string; value: FontOption }[] = [
-    { label: 'Inter', value: 'Inter' },
-    { label: 'Lato', value: 'Lato' },
-    { label: 'Montserrat', value: 'Montserrat' },
-    { label: 'Playfair', value: 'Playfair Display' },
-    { label: 'Mono', value: 'Roboto Mono' },
-];
-
-const accentPresets = [
-    '#2563eb', // Blue
-    '#7c3aed', // Violet
-    '#db2777', // Pink
-    '#ea580c', // Orange
-    '#059669', // Emerald
-    '#475569', // Slate
-];
+const accentPresets = ['#00FF00', '#FF0000', '#00FFFF', '#FFFF00', '#FF00FF', '#FFFFFF'];
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({ 
-  isOpen, 
-  onClose, 
-  allWidgets, 
-  enabledWidgets, 
-  setEnabledWidgets,
-  backgroundSetting,
-  setBackgroundSetting,
-  clockFormat,
-  setClockFormat,
-  font,
-  setFont,
-  themeSettings,
-  setThemeSettings
+  isOpen, onClose, allWidgets, enabledWidgets, setEnabledWidgets, themeSettings, setThemeSettings
 }) => {
   const [name, setName] = useLocalStorage('user_name', '');
 
@@ -59,265 +25,81 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     if (enabledWidgets.includes(id)) {
       setEnabledWidgets(enabledWidgets.filter((wId) => wId !== id));
     } else {
-      if (id === 'quote') {
-        setEnabledWidgets([id, ...enabledWidgets]);
-      } else {
-        setEnabledWidgets([...enabledWidgets, id]);
-      }
+      setEnabledWidgets([...enabledWidgets, id]);
     }
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) { // 2MB limit
-        alert('Image is too large! Please choose a file smaller than 2MB.');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setBackgroundSetting({ type: 'custom', dataUrl: reader.result as string });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-  
-  const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setBackgroundSetting({ type: 'color', color: e.target.value });
-  };
-
-  const handleAccentChange = (color: string) => {
-      setThemeSettings(prev => ({ ...prev, accentColor: color }));
-  };
-
-  const handleOpacityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setThemeSettings(prev => ({ ...prev, glassOpacity: parseFloat(e.target.value) }));
-  };
+  if (!isOpen) return null;
 
   return (
-    <>
-      <div 
-        className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      <div 
-        className={`fixed top-0 right-0 h-full w-full max-w-md bg-black/40 backdrop-blur-xl border-l border-white/20 text-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="settings-title"
-        style={{ fontFamily: 'Inter, sans-serif' }}
-      >
-        <div className="p-6 h-full overflow-y-auto scrollbar-hide">
-          <div className="flex justify-between items-center mb-6">
-            <h2 id="settings-title" className="text-2xl font-bold">Customize</h2>
-            <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-colors">
-              <XIcon className="w-6 h-6" />
-            </button>
-          </div>
-          
-          <div className="mb-8">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-white/50 mb-4">Identity</h3>
-            <div className="space-y-4">
-                <label className="block p-3 bg-white/5 rounded-lg border border-white/5 focus-within:border-white/20 transition-colors">
-                    <span className="font-medium text-xs text-white/50 uppercase tracking-wider">Name</span>
-                    <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Your name"
-                        className="w-full bg-transparent text-lg focus:outline-none mt-1 placeholder-white/30"
-                    />
-                </label>
-            </div>
-          </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+      <div className="w-full max-w-2xl bg-[var(--bg-color)] border-2 border-[var(--fg-color)] shadow-[8px_8px_0px_0px_var(--border-color)] p-0">
+        
+        {/* Header */}
+        <div className="flex justify-between items-center bg-[var(--fg-color)] text-[var(--bg-color)] p-4">
+            <h2 className="text-xl font-bold uppercase tracking-tighter">SYS_CONFIG // SETTINGS</h2>
+            <button onClick={onClose} className="hover:bg-[var(--accent-color)] hover:text-black p-1 border border-black"><XIcon className="w-6 h-6"/></button>
+        </div>
 
-          <div className="mb-8">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-white/50 mb-4">Theme</h3>
-            <div className="space-y-6">
-                 <div>
-                     <span className="text-xs text-white/50 uppercase tracking-wider mb-2 block">Accent Color</span>
-                     <div className="flex flex-wrap gap-3">
-                         {accentPresets.map(color => (
-                             <button
-                                 key={color}
-                                 onClick={() => handleAccentChange(color)}
-                                 className={`w-8 h-8 rounded-full border transition-all ${themeSettings.accentColor === color ? 'scale-110 border-white shadow-lg' : 'border-transparent hover:scale-105'}`}
-                                 style={{ backgroundColor: color }}
-                             />
-                         ))}
-                         <div className="relative">
-                             <div 
-                                 className={`w-8 h-8 rounded-full border transition-all flex items-center justify-center overflow-hidden bg-gradient-to-br from-white/10 to-white/30 ${!accentPresets.includes(themeSettings.accentColor) ? 'scale-110 border-white shadow-lg' : 'border-transparent hover:scale-105'}`}
-                             >
-                                <div className="w-full h-full" style={{ backgroundColor: themeSettings.accentColor }}></div>
-                             </div>
-                             <input 
-                                 type="color" 
-                                 value={themeSettings.accentColor}
-                                 onChange={(e) => handleAccentChange(e.target.value)}
-                                 className="absolute inset-0 opacity-0 cursor-pointer"
-                             />
-                         </div>
-                     </div>
-                 </div>
-                 <div>
-                     <div className="flex justify-between items-center mb-2">
-                        <span className="text-xs text-white/50 uppercase tracking-wider">Widget Opacity</span>
-                        <span className="text-xs text-white/50">{Math.round(themeSettings.glassOpacity * 100)}%</span>
-                     </div>
-                     <input 
-                        type="range" 
-                        min="0" 
-                        max="0.8" 
-                        step="0.05"
-                        value={themeSettings.glassOpacity}
-                        onChange={handleOpacityChange}
-                        className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-110"
-                     />
-                 </div>
-            </div>
-          </div>
-          
-          <div className="mb-8">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-white/50 mb-4">Typography</h3>
-            <div className="grid grid-cols-2 gap-2">
-                {fontOptions.map((opt) => (
-                    <button
-                        key={opt.value}
-                        onClick={() => setFont(opt.value)}
-                        className={`p-3 rounded-lg text-left transition-all border ${font === opt.value ? 'bg-[var(--accent-color)] border-[var(--accent-color)] text-white shadow-lg scale-[1.02]' : 'bg-white/5 border-transparent text-white/70 hover:bg-white/10'}`}
-                    >
-                        <span className="block text-lg leading-none mb-1" style={{ fontFamily: opt.value }}>Aa</span>
-                        <span className="text-xs opacity-70">{opt.label}</span>
-                    </button>
-                ))}
-            </div>
-          </div>
-
-          <div className="mb-8">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-white/50 mb-4">Interface</h3>
-            <div className="p-4 bg-white/5 rounded-lg border border-white/5">
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-sm">Clock Format</span>
-                <div className="flex items-center bg-black/40 rounded-lg p-1">
-                  <button 
-                    onClick={() => setClockFormat('12h')}
-                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${clockFormat === '12h' ? 'bg-[var(--accent-color)] text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}`}
-                  >
-                    12h
-                  </button>
-                  <button 
-                    onClick={() => setClockFormat('24h')}
-                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${clockFormat === '24h' ? 'bg-[var(--accent-color)] text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}`}
-                  >
-                    24h
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mb-8">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-white/50 mb-4">Widgets</h3>
-            <div className="space-y-2">
-              {allWidgets.map((widget) => (
-                <label key={widget.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg cursor-pointer border border-transparent hover:border-white/10 transition-all">
-                  <span className="font-medium text-sm">{widget.name}</span>
-                  <div className="relative inline-flex items-center cursor-pointer">
+        <div className="p-6 overflow-y-auto max-h-[80vh] space-y-8">
+            
+            {/* Identity */}
+            <section>
+                <h3 className="text-[var(--accent-color)] font-bold mb-2 uppercase border-b border-[var(--border-color)]">IDENTITY</h3>
+                <div className="flex flex-col">
+                    <label className="text-xs mb-1">USER_NAME</label>
                     <input 
-                      type="checkbox" 
-                      className="sr-only peer" 
-                      checked={enabledWidgets.includes(widget.id)}
-                      onChange={() => toggleWidget(widget.id)}
+                        value={name} 
+                        onChange={e => setName(e.target.value)} 
+                        className="bg-transparent border-2 border-[var(--border-color)] p-2 focus:border-[var(--accent-color)] outline-none font-bold"
                     />
-                    <div 
-                        className="w-9 h-5 bg-white/10 rounded-full peer peer-focus:ring-2 peer-focus:ring-white/20 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--accent-color)]"
-                        style={{ '--accent-color': themeSettings.accentColor } as React.CSSProperties}
-                    ></div>
-                  </div>
-                </label>
-              ))}
+                </div>
+            </section>
+
+            {/* Visuals */}
+            <section>
+                <h3 className="text-[var(--accent-color)] font-bold mb-2 uppercase border-b border-[var(--border-color)]">VISUALS</h3>
+                <div className="flex gap-4 mb-4">
+                    {accentPresets.map(c => (
+                        <button 
+                            key={c}
+                            onClick={() => setThemeSettings(p => ({...p, accentColor: c}))}
+                            className={`w-8 h-8 border-2 ${themeSettings.accentColor === c ? 'border-white' : 'border-transparent'}`}
+                            style={{ backgroundColor: c }}
+                        />
+                    ))}
+                    <input type="color" value={themeSettings.accentColor} onChange={e => setThemeSettings(p => ({...p, accentColor: e.target.value}))} className="w-8 h-8 bg-transparent" />
+                </div>
+            </section>
+
+            {/* Modules */}
+            <section>
+                <h3 className="text-[var(--accent-color)] font-bold mb-2 uppercase border-b border-[var(--border-color)]">MODULES</h3>
+                <div className="grid grid-cols-2 gap-2">
+                    {allWidgets.map(w => {
+                        const isEnabled = enabledWidgets.includes(w.id);
+                        return (
+                            <button 
+                                key={w.id}
+                                onClick={() => toggleWidget(w.id)}
+                                className={`border border-[var(--border-color)] p-3 text-left flex justify-between group hover:border-[var(--fg-color)]`}
+                            >
+                                <span className="font-bold">{w.name.toUpperCase()}</span>
+                                <span className={isEnabled ? 'text-[var(--accent-color)]' : 'text-neutral-600'}>
+                                    {isEnabled ? '[ON]' : '[OFF]'}
+                                </span>
+                            </button>
+                        )
+                    })}
+                </div>
+            </section>
+
+            <div className="text-center pt-4 text-xs text-neutral-600">
+                build_ver: 2.0.0_brutal
             </div>
-          </div>
-
-          <div className="mb-8">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-white/50 mb-4">Background</h3>
-              <div className="grid grid-cols-3 gap-3">
-                  <button
-                      onClick={() => setBackgroundSetting({ type: 'random' })}
-                      className={`relative aspect-square rounded-lg flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors focus:outline-none border ${
-                          backgroundSetting.type === 'random' ? 'border-[var(--accent-color)] ring-1 ring-[var(--accent-color)]' : 'border-transparent ring-1 ring-white/10'
-                      }`}
-                      aria-label="Set random background"
-                  >
-                      <ShuffleIcon className="w-6 h-6 text-white/70" />
-                      <span className="absolute bottom-2 text-[10px] font-medium uppercase tracking-wide text-white/50">Random</span>
-                  </button>
-
-                  <label
-                      className={`relative aspect-square rounded-lg flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors cursor-pointer focus-within:ring-2 focus-within:ring-[var(--accent-color)] border ${
-                          backgroundSetting.type === 'color' ? 'border-[var(--accent-color)] ring-1 ring-[var(--accent-color)]' : 'border-transparent ring-1 ring-white/10'
-                      }`}
-                      title="Pick a solid color"
-                  >
-                       <div 
-                            className="w-8 h-8 rounded-full border border-white/20 shadow-lg" 
-                            style={{ background: backgroundSetting.type === 'color' ? backgroundSetting.color : 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)' }}
-                       />
-                       <span className="absolute bottom-2 text-[10px] font-medium uppercase tracking-wide text-white/50">Color</span>
-                       <input 
-                            type="color" 
-                            className="opacity-0 absolute inset-0 cursor-pointer w-full h-full"
-                            onChange={handleColorChange}
-                            value={backgroundSetting.type === 'color' ? backgroundSetting.color : '#000000'}
-                       />
-                  </label>
-
-                  <label
-                      htmlFor="background-upload"
-                      className={`relative aspect-square rounded-lg flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors cursor-pointer overflow-hidden focus-within:ring-2 focus-within:ring-[var(--accent-color)] border ${
-                          backgroundSetting.type === 'custom' ? 'border-[var(--accent-color)] ring-1 ring-[var(--accent-color)]' : 'border-transparent ring-1 ring-white/10'
-                      }`}
-                      aria-label="Upload custom background"
-                  >
-                      {backgroundSetting.type === 'custom' ? (
-                          <img src={backgroundSetting.dataUrl} className="w-full h-full object-cover opacity-50" alt="Custom background preview" />
-                      ) : (
-                           <UploadIcon className="w-6 h-6 text-white/70" />
-                      )}
-                      <span className="absolute bottom-2 text-[10px] font-medium uppercase tracking-wide text-white/50">Upload</span>
-                      <input
-                          id="background-upload"
-                          type="file"
-                          accept="image/png, image/jpeg, image/webp"
-                          className="sr-only"
-                          onChange={handleFileChange}
-                      />
-                  </label>
-
-                  {curatedBackgrounds.map(bg => (
-                      <button
-                          key={bg.id}
-                          onClick={() => setBackgroundSetting({ type: 'gallery', id: bg.id, url: bg.url })}
-                          className={`relative aspect-square rounded-lg bg-cover bg-center focus:outline-none overflow-hidden group border ${
-                            backgroundSetting.type === 'gallery' && backgroundSetting.id === bg.id ? 'border-[var(--accent-color)] ring-1 ring-[var(--accent-color)]' : 'border-transparent ring-1 ring-white/10'
-                          }`}
-                          style={{ backgroundImage: `url(${bg.thumbnailUrl})` }}
-                          aria-label={`Set background to ${bg.id}`}
-                      >
-                          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors duration-300"></div>
-                      </button>
-                  ))}
-              </div>
-          </div>
-          
-          <div className="mt-8 text-center">
-             <p className="text-xs text-white/20">Zenith Tab v1.1</p>
-          </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

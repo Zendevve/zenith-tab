@@ -17,61 +17,58 @@ const Widget: React.FC<WidgetProps> = ({ title, children, widgetId, size, onSize
   const MAX_SIZE = 3;
 
   return (
-    <div className="group/widget relative h-full flex flex-col transition-all duration-700 cubic-bezier(0.2, 0, 0, 1)">
-      {/* Premium Glass Background Layer with CSS Variable Opacity */}
-      <div 
-        className="absolute inset-0 backdrop-blur-2xl rounded-[2rem] border border-white/5 shadow-lg transition-all duration-700 group-hover/widget:border-white/10 group-hover/widget:shadow-[0_20px_40px_rgba(0,0,0,0.4)]"
-        style={{ backgroundColor: `rgba(0, 0, 0, var(--glass-opacity))` }}
-      ></div>
-
-      {/* Content Layer */}
-      <div className="relative z-10 flex flex-col h-full p-6">
-        <div className="flex justify-between items-center mb-4 min-h-[24px]">
-          <h2 className="text-[10px] font-bold tracking-[0.2em] text-white/20 uppercase transition-colors duration-500 group-hover/widget:text-white/50">{title}</h2>
-          
-          {(onSizeChange || onClose) && widgetId && (
-              <div className="flex items-center space-x-1 opacity-0 translate-y-1 group-hover/widget:opacity-100 group-hover/widget:translate-y-0 transition-all duration-500 ease-[cubic-bezier(0.2,0,0,1)]">
-                  {onSizeChange && typeof size !== 'undefined' && (
-                      <div className="flex bg-white/5 rounded-full p-0.5 backdrop-blur-md border border-white/5">
+    <div className="group/widget relative h-full flex flex-col border-2 border-[var(--border-color)] bg-[var(--bg-color)] hover:border-[var(--accent-color)] transition-colors duration-0">
+      
+      {/* Brutalist Header */}
+      <div className="flex justify-between items-stretch border-b-2 border-[var(--border-color)] bg-[var(--border-color)] text-[var(--bg-color)] min-h-[32px]">
+        <div className="px-3 flex items-center bg-[var(--accent-color)] text-[var(--bg-color)] font-bold text-xs tracking-widest uppercase">
+          {title}
+        </div>
+        
+        <div className="flex-grow flex items-center justify-end px-2 space-x-2">
+            {(onSizeChange || onClose) && widgetId && (
+                <div className="flex h-full items-center space-x-2">
+                    {onSizeChange && typeof size !== 'undefined' && (
+                        <>
                           <button
                               onClick={() => onSizeChange(widgetId, size - 1)}
                               disabled={size <= MIN_SIZE}
-                              className="p-1.5 rounded-full hover:bg-white/10 disabled:opacity-10 transition-all text-white/40 hover:text-white active:scale-90"
-                              aria-label="Decrease widget size"
+                              className="h-5 w-5 flex items-center justify-center bg-black text-white hover:bg-white hover:text-black disabled:opacity-20 transition-colors"
+                              aria-label="Shrink"
                           >
                               <ChevronLeftIcon className="w-3 h-3" />
                           </button>
                           <button
                               onClick={() => onSizeChange(widgetId, size + 1)}
                               disabled={size >= MAX_SIZE}
-                              className="p-1.5 rounded-full hover:bg-white/10 disabled:opacity-10 transition-all text-white/40 hover:text-white active:scale-90"
-                              aria-label="Increase widget size"
+                              className="h-5 w-5 flex items-center justify-center bg-black text-white hover:bg-white hover:text-black disabled:opacity-20 transition-colors"
+                              aria-label="Expand"
                           >
                               <ChevronRightIcon className="w-3 h-3" />
                           </button>
-                      </div>
-                  )}
-                  {onClose && (
-                      <button
-                          onClick={() => onClose(widgetId)}
-                          className="p-1.5 rounded-full bg-white/5 hover:bg-red-500/20 border border-white/5 transition-all text-white/30 hover:text-red-400 active:scale-90 ml-1"
-                          aria-label="Close widget"
-                      >
-                          <XIcon className="w-3 h-3" />
-                      </button>
-                  )}
-              </div>
-          )}
-        </div>
-        {/* Content Area with Subtle Bottom Fade */}
-        <div 
-            className="flex-grow overflow-y-auto pr-2 scrollbar-hide"
-            style={{ maskImage: 'linear-gradient(to bottom, black 90%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 90%, transparent 100%)' }}
-        >
-          {children}
-          <div className="h-4"></div>
+                        </>
+                    )}
+                    {onClose && (
+                        <button
+                            onClick={() => onClose(widgetId)}
+                            className="h-5 w-5 flex items-center justify-center bg-red-600 text-white hover:bg-red-500"
+                            aria-label="Close"
+                        >
+                            <XIcon className="w-3 h-3" />
+                        </button>
+                    )}
+                </div>
+            )}
         </div>
       </div>
+
+      {/* Content Area */}
+      <div className="flex-grow overflow-y-auto p-4 scrollbar-hide text-[var(--fg-color)]">
+        {children}
+      </div>
+      
+      {/* Decoration: Corner Marker */}
+      <div className="absolute bottom-0 right-0 w-2 h-2 bg-[var(--accent-color)]"></div>
     </div>
   );
 };

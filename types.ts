@@ -2,16 +2,13 @@
 export type WidgetId = 'tasks' | 'notes' | 'weather' | 'quote' | 'ai_assistant' | 'links' | 'search';
 
 export type BackgroundSetting = 
-  | { type: 'random' } 
-  | { type: 'gallery', id: string, url: string } 
-  | { type: 'custom', dataUrl: string }
-  | { type: 'color', color: string };
+  | { type: 'solid', color: string };
 
-export type FontOption = 'Inter' | 'Roboto Mono' | 'Playfair Display' | 'Lato' | 'Montserrat';
+export type FontOption = 'Roboto Mono' | 'IBM Plex Mono';
 
 export interface ThemeSettings {
   accentColor: string;
-  glassOpacity: number; // 0.0 to 1.0
+  gridVisible: boolean;
 }
 
 export interface Widget {

@@ -16,34 +16,30 @@ const Clock: React.FC<ClockProps> = ({ clockFormat }) => {
   }, []);
 
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { 
+    return date.toLocaleTimeString('en-US', { 
       hour: '2-digit', 
       minute: '2-digit',
+      second: '2-digit',
       hour12: clockFormat === '12h'
     });
   };
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString(undefined, {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric'
-    });
+    // ISO-like format for brutalism
+    return date.toISOString().split('T')[0];
   };
 
   return (
-    <div className="relative group cursor-default select-none mix-blend-overlay flex flex-col items-center">
-        <div 
-            className="text-[6rem] md:text-[10rem] leading-none font-thin tracking-tighter text-white/90 text-center transition-all duration-1000 ease-[cubic-bezier(0.2,0,0,1)] transform group-hover:scale-[1.01] group-hover:text-white" 
-            style={{ 
-                textShadow: '0 0 60px rgba(255,255,255,0.1)',
-                fontWeight: 100
-            }}
-        >
-        {formatTime(time)}
-        </div>
-        <div className="text-sm md:text-base font-medium tracking-[0.4em] uppercase text-white/60 mt-2 opacity-0 -translate-y-4 animate-fadeInUp" style={{ animationDelay: '200ms' }}>
-            {formatDate(time)}
+    <div className="flex flex-col items-start md:items-center w-full border-b-2 border-[var(--border-color)] pb-6 mb-6">
+        <div className="w-full max-w-6xl flex flex-col md:flex-row justify-between items-end px-4">
+            <div 
+                className="text-6xl md:text-9xl font-bold tracking-tighter text-[var(--accent-color)] leading-none"
+            >
+            {formatTime(time)}
+            </div>
+            <div className="text-xl md:text-2xl font-bold tracking-widest text-[var(--fg-color)] mt-2 md:mb-4">
+                DAT::{formatDate(time)}
+            </div>
         </div>
     </div>
   );

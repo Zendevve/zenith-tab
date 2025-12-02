@@ -1,28 +1,22 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 const Greeting: React.FC = () => {
   const [name] = useLocalStorage('user_name', '');
-  const [greeting, setGreeting] = useState('');
+  const [blink, setBlink] = useState(true);
 
   useEffect(() => {
-    const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) {
-      setGreeting('Good morning');
-    } else if (hour >= 12 && hour < 18) {
-      setGreeting('Good afternoon');
-    } else {
-      setGreeting('Good evening');
-    }
+    const interval = setInterval(() => setBlink(b => !b), 530);
+    return () => clearInterval(interval);
   }, []);
 
   return (
-    <h1 
-      className="text-lg md:text-xl text-white/60 font-light tracking-[0.2em] uppercase animate-fadeIn mix-blend-overlay" 
-    >
-      {greeting}{name ? <span className="text-white/90 font-normal ml-2">{name}</span> : ''}
-    </h1>
+    <div className="w-full max-w-6xl px-4 flex items-center font-mono text-sm md:text-base text-[var(--fg-color)] opacity-70 mb-2">
+      <span className="text-[var(--accent-color)] mr-2">root@zenith:~#</span>
+      <span>echo "Welcome back, {name || 'User'}"</span>
+      <span className={`inline-block w-2.5 h-4 ml-1 bg-[var(--accent-color)] ${blink ? 'opacity-100' : 'opacity-0'}`}></span>
+    </div>
   );
 };
 
