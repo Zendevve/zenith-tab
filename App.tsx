@@ -233,8 +233,8 @@ const App: React.FC = () => {
       
       <div className="relative z-10 w-full h-full flex flex-col p-6 md:p-8 lg:p-12 max-w-7xl mx-auto">
         
-        {/* Header Section - hidden if widget is maximized */}
-        <header className={`flex-shrink-0 transition-all duration-700 mb-2 md:mb-6 ${isFocusMode || maximizedWidgetId ? 'opacity-0 pointer-events-none absolute' : 'opacity-100'}`}>
+        {/* Header Section - Only hidden in Focus (Zen) Mode, NOT when a widget is maximized */}
+        <header className={`flex-shrink-0 transition-all duration-700 mb-2 md:mb-6 ${isFocusMode ? 'opacity-0 pointer-events-none absolute' : 'opacity-100'}`}>
             <Greeting />
             <Clock clockFormat={clockFormat} />
             {widgetOrder.includes('quote') && (
@@ -242,31 +242,40 @@ const App: React.FC = () => {
             )}
         </header>
 
-        {/* Maximized Widget Overlay */}
+        {/* Maximized Widget Modal Overlay */}
         {maximizedWidgetId && (
-            <div className="absolute inset-0 z-30 bg-[#0a0a0a] flex flex-col p-6 md:p-12 animate-fade-in">
-                {(() => {
-                    const widget = allWidgets.find(w => w.id === maximizedWidgetId);
-                    if (!widget) return null;
-                    const WidgetContent = widgetMap[widget.id];
-                    return (
-                        <WidgetComponent
-                            title={widget.name}
-                            widgetId={widget.id}
-                            isMaximized={true}
-                            onToggleMaximize={handleToggleMaximize}
-                        >
-                             <Suspense fallback={<div className="animate-pulse bg-white/5 h-full w-full rounded-lg"></div>}>
-                                <WidgetContent />
-                             </Suspense>
-                        </WidgetComponent>
-                    );
-                })()}
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8">
+                {/* Backdrop with Blur */}
+                <div 
+                    className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" 
+                    onClick={() => setMaximizedWidgetId(null)}
+                />
+                
+                {/* Centered Modal Container */}
+                <div className="relative w-full max-w-4xl h-[70vh] md:h-[80vh] bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-scale-in">
+                    {(() => {
+                        const widget = allWidgets.find(w => w.id === maximizedWidgetId);
+                        if (!widget) return null;
+                        const WidgetContent = widgetMap[widget.id];
+                        return (
+                            <WidgetComponent
+                                title={widget.name}
+                                widgetId={widget.id}
+                                isMaximized={true}
+                                onToggleMaximize={handleToggleMaximize}
+                            >
+                                <Suspense fallback={<div className="animate-pulse bg-white/5 h-full w-full rounded-lg"></div>}>
+                                    <WidgetContent />
+                                </Suspense>
+                            </WidgetComponent>
+                        );
+                    })()}
+                </div>
             </div>
         )}
 
-        {/* Paginated Grid Area */}
-        <div className={`flex-grow relative w-full transition-opacity duration-500 min-h-0 ${isFocusMode || maximizedWidgetId ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+        {/* Paginated Grid Area - Only hidden in Zen Mode, effectively blurred by backdrop when maximized */}
+        <div className={`flex-grow relative w-full transition-opacity duration-500 min-h-0 ${isFocusMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
              {pages.map((pageWidgets, pageIndex) => (
                 <div 
                     key={pageIndex}

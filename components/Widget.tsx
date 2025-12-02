@@ -19,7 +19,7 @@ const Widget: React.FC<WidgetProps> = ({ title, children, widgetId, size, isMaxi
   const MAX_SIZE = 3;
 
   return (
-    <div className={`group/widget relative w-full h-full flex flex-col transition-all duration-300 rounded-xl hover:bg-white/[0.03] border border-transparent hover:border-white/5 min-h-0 ${isMaximized ? 'bg-[#0a0a0a]' : ''}`}>
+    <div className={`group/widget relative w-full h-full flex flex-col transition-all duration-300 rounded-xl hover:bg-white/[0.03] border border-transparent hover:border-white/5 min-h-0 ${isMaximized ? 'bg-transparent' : ''}`}>
       
       {/* Minimalist Floating Controls (Visible on Hover) */}
       <div className="absolute top-2 right-2 flex items-center space-x-1 opacity-0 group-hover/widget:opacity-100 transition-opacity duration-200 z-10 bg-[#0a0a0a]/80 backdrop-blur rounded px-1">
@@ -27,7 +27,7 @@ const Widget: React.FC<WidgetProps> = ({ title, children, widgetId, size, isMaxi
             <>
                 {onToggleMaximize && (
                   <button
-                    onClick={() => onToggleMaximize(widgetId)}
+                    onClick={(e) => { e.stopPropagation(); onToggleMaximize(widgetId); }}
                     className="p-1 text-white/40 hover:text-white transition-colors"
                     aria-label={isMaximized ? "Minimize" : "Maximize"}
                   >
@@ -37,7 +37,7 @@ const Widget: React.FC<WidgetProps> = ({ title, children, widgetId, size, isMaxi
                 {!isMaximized && onSizeChange && typeof size !== 'undefined' && (
                     <>
                       <button
-                          onClick={() => onSizeChange(widgetId, size - 1)}
+                          onClick={(e) => { e.stopPropagation(); onSizeChange(widgetId, size - 1); }}
                           disabled={size <= MIN_SIZE}
                           className="p-1 text-white/40 hover:text-white disabled:opacity-0 transition-colors"
                           aria-label="Shrink"
@@ -45,7 +45,7 @@ const Widget: React.FC<WidgetProps> = ({ title, children, widgetId, size, isMaxi
                           <ChevronLeftIcon className="w-3 h-3" />
                       </button>
                       <button
-                          onClick={() => onSizeChange(widgetId, size + 1)}
+                          onClick={(e) => { e.stopPropagation(); onSizeChange(widgetId, size + 1); }}
                           disabled={size >= MAX_SIZE}
                           className="p-1 text-white/40 hover:text-white disabled:opacity-0 transition-colors"
                           aria-label="Expand"
@@ -56,7 +56,7 @@ const Widget: React.FC<WidgetProps> = ({ title, children, widgetId, size, isMaxi
                 )}
                 {!isMaximized && onClose && (
                     <button
-                        onClick={() => onClose(widgetId)}
+                        onClick={(e) => { e.stopPropagation(); onClose(widgetId); }}
                         className="p-1 text-white/40 hover:text-red-400 transition-colors ml-1"
                         aria-label="Close"
                     >
@@ -69,8 +69,15 @@ const Widget: React.FC<WidgetProps> = ({ title, children, widgetId, size, isMaxi
 
       {/* Content Area */}
       <div className="flex-grow flex flex-col overflow-hidden p-4 min-h-0">
-        <div className="flex-shrink-0 text-[10px] uppercase tracking-[0.2em] text-white/30 mb-2 select-none">
+        <div 
+            onClick={() => onToggleMaximize && widgetId && onToggleMaximize(widgetId)}
+            className={`flex-shrink-0 text-[10px] uppercase tracking-[0.2em] text-white/30 mb-2 select-none transition-colors flex items-center gap-2 ${onToggleMaximize ? 'cursor-pointer hover:text-[var(--accent-color)]' : ''}`}
+            title={isMaximized ? "Click to minimize" : "Click to focus"}
+        >
           {title}
+          {!isMaximized && onToggleMaximize && (
+              <MaximizeIcon className="w-2.5 h-2.5 opacity-0 group-hover/widget:opacity-50 transition-all" />
+          )}
         </div>
         <div className="flex-grow overflow-y-auto scrollbar-hide text-[var(--fg-color)] relative h-full">
           {children}
