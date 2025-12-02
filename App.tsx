@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy, useRef } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { WidgetId, Widget, Quote, ThemeSettings } from './types';
 import { fetchInspirationalQuote } from './services/geminiService';
@@ -37,6 +37,25 @@ const widgetMap: Record<WidgetId, React.LazyExoticComponent<React.FC<{}>>> = {
   quote: ({ children }) => <>{children}</> as any,
 };
 
+// Helper hook for window size
+function useWindowSize() {
+    const [windowSize, setWindowSize] = useState({
+        width: typeof window !== 'undefined' ? window.innerWidth : 1200,
+        height: typeof window !== 'undefined' ? window.innerHeight : 800,
+    });
+    useEffect(() => {
+        const handleResize = () => {
+            setWindowSize({
+                width: window.innerWidth,
+                height: window.innerHeight,
+            });
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+    return windowSize;
+}
+
 const App: React.FC = () => {
   const [quoteData, setQuoteData] = useState<Quote | null>(null);
   const [isQuoteLoading, setIsQuoteLoading] = useState(true);
@@ -56,7 +75,11 @@ const App: React.FC = () => {
   const [clockFormat, setClockFormat] = useLocalStorage<'12h' | '24h'>('clock_format', '24h');
   const [themeSettings, setThemeSettings] = useLocalStorage<ThemeSettings>('theme_settings', { accentColor: '#ffffff', gridVisible: true });
   
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(0);
   const [draggedWidgetId, setDraggedWidgetId] = useState<WidgetId | null>(null);
+  
+  const { width } = useWindowSize();
 
   const refreshQuote = useCallback(() => {
     if (widgetOrder.includes('quote')) {
@@ -75,12 +98,63 @@ const App: React.FC = () => {
     refreshQuote();
   }, [refreshQuote]);
 
-  const activeGridWidgets = useMemo(() => {
-    return widgetOrder
+  // Pagination Logic
+  const pages = useMemo(() => {
+    const activeWidgets = widgetOrder
       .map(id => allWidgets.find(w => w.id === id))
       .filter((w): w is Widget => !!w && w.id !== 'quote');
-  }, [widgetOrder]);
-  
+
+    // Determine grid capacity based on screen width
+    let columns = 1;
+    let maxRows = 3; // Default mobile rows
+
+    if (width >= 1024) { // lg
+        columns = 3;
+        maxRows = 2; // Desktop usually fits 2 rows comfortably
+    } else if (width >= 768) { // md
+        columns = 2;
+        maxRows = 3;
+    }
+
+    const unitsPerPage = columns * maxRows;
+    const result: Widget[][] = [];
+    let currentChunk: Widget[] = [];
+    let currentCost = 0;
+
+    activeWidgets.forEach(widget => {
+        // Calculate effective cost of widget on current screen
+        const rawSize = widgetSizes[widget.id] || 1;
+        // On mobile/tablet, a size 3 widget might only span 1 or 2 cols effectively
+        let effectiveSize = rawSize;
+        if (width < 768) effectiveSize = 1; // Mobile: everything is 1 col wide
+        else if (width < 1024) effectiveSize = Math.min(rawSize, 2); // Tablet: max 2 cols
+
+        // If adding this widget exceeds page capacity, start new page
+        if (currentCost + effectiveSize > unitsPerPage) {
+            if (currentChunk.length > 0) {
+                result.push(currentChunk);
+                currentChunk = [];
+                currentCost = 0;
+            }
+        }
+        currentChunk.push(widget);
+        currentCost += effectiveSize;
+    });
+
+    if (currentChunk.length > 0) {
+        result.push(currentChunk);
+    }
+
+    return result.length > 0 ? result : [[]];
+  }, [widgetOrder, widgetSizes, width]);
+
+  // Ensure current page is valid
+  useEffect(() => {
+    if (currentPage >= pages.length) {
+        setCurrentPage(Math.max(0, pages.length - 1));
+    }
+  }, [pages.length, currentPage]);
+
   const handleSizeChange = (id: WidgetId, newSize: number) => {
     setWidgetSizes(prev => ({
         ...prev,
@@ -121,9 +195,28 @@ const App: React.FC = () => {
       });
   };
 
+  // Wheel listener for page switching
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+        // Only switch if not scrolling inside a widget (simple check)
+        const target = e.target as HTMLElement;
+        if (target.closest('.overflow-y-auto')) return;
+
+        if (e.deltaY > 50) {
+            setCurrentPage(p => Math.min(p + 1, pages.length - 1));
+        } else if (e.deltaY < -50) {
+            setCurrentPage(p => Math.max(p - 1, 0));
+        }
+    };
+    
+    window.addEventListener('wheel', handleWheel);
+    return () => window.removeEventListener('wheel', handleWheel);
+  }, [pages.length]);
+
+
   return (
     <main 
-        className="relative w-screen h-screen overflow-hidden transition-none"
+        className="relative w-screen h-screen overflow-hidden transition-none select-none"
         style={{ 
           '--accent-color': themeSettings.accentColor,
           '--fg-color': '#e5e5e5',
@@ -131,10 +224,10 @@ const App: React.FC = () => {
         } as React.CSSProperties}
     >
       
-      <div className="relative z-10 w-full h-full flex flex-col p-4 md:p-12 overflow-hidden max-w-7xl mx-auto">
+      <div className="relative z-10 w-full h-full flex flex-col p-6 md:p-12 max-w-7xl mx-auto">
         
         {/* Header Section */}
-        <header className={`flex-shrink-0 transition-all duration-700 ${isFocusMode ? 'opacity-20 blur-sm' : 'opacity-100'}`}>
+        <header className={`flex-shrink-0 transition-all duration-700 mb-6 ${isFocusMode ? 'opacity-20 blur-sm' : 'opacity-100'}`}>
             <Greeting />
             <Clock clockFormat={clockFormat} />
             {widgetOrder.includes('quote') && (
@@ -142,46 +235,72 @@ const App: React.FC = () => {
             )}
         </header>
 
-        {/* Minimal Grid */}
-        {activeGridWidgets.length > 0 && (
-          <div 
-            className={`w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 pb-20 flex-grow transition-opacity duration-500 ${isFocusMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`} 
-            style={{ overflowY: 'auto' }}
-          >
-            {activeGridWidgets.map((widget) => {
-                const WidgetContent = widgetMap[widget.id];
-                const size = widgetSizes[widget.id] || 1;
-                const colSpanClass = {
-                    1: 'col-span-1',
-                    2: 'md:col-span-2 col-span-1',
-                    3: 'md:col-span-2 lg:col-span-3 col-span-1',
-                }[size] || 'col-span-1';
+        {/* Paginated Grid Area */}
+        <div className={`flex-grow relative w-full transition-opacity duration-500 ${isFocusMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+             {pages.map((pageWidgets, pageIndex) => (
+                <div 
+                    key={pageIndex}
+                    className={`absolute inset-0 w-full h-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-all duration-500 transform ${
+                        pageIndex === currentPage 
+                            ? 'opacity-100 translate-x-0 pointer-events-auto' 
+                            : pageIndex < currentPage 
+                                ? 'opacity-0 -translate-x-10 pointer-events-none' 
+                                : 'opacity-0 translate-x-10 pointer-events-none'
+                    }`}
+                    style={{ gridTemplateRows: 'repeat(auto-fill, minmax(180px, 1fr))', alignContent: 'start' }}
+                >
+                    {pageWidgets.map((widget) => {
+                        const WidgetContent = widgetMap[widget.id];
+                        const size = widgetSizes[widget.id] || 1;
+                        const colSpanClass = {
+                            1: 'col-span-1',
+                            2: 'md:col-span-2 col-span-1',
+                            3: 'md:col-span-2 lg:col-span-3 col-span-1',
+                        }[size] || 'col-span-1';
 
-                return (
-                    <div
-                        key={widget.id}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, widget.id)}
-                        onDragOver={handleDragOver}
-                        onDrop={(e) => handleDrop(e, widget.id)}
-                        className={`${colSpanClass} h-full min-h-[160px]`}
-                    >
-                        <WidgetComponent
-                            title={widget.name}
-                            widgetId={widget.id}
-                            size={size}
-                            onSizeChange={handleSizeChange}
-                            onClose={handleCloseWidget}
-                        >
-                            <Suspense fallback={<div className="animate-pulse bg-white/5 h-full w-full rounded-lg"></div>}>
-                                <WidgetContent />
-                            </Suspense>
-                        </WidgetComponent>
-                    </div>
-                )
-            })}
-          </div>
+                        return (
+                            <div
+                                key={widget.id}
+                                draggable
+                                onDragStart={(e) => handleDragStart(e, widget.id)}
+                                onDragOver={handleDragOver}
+                                onDrop={(e) => handleDrop(e, widget.id)}
+                                className={`${colSpanClass} h-full max-h-[300px]`}
+                            >
+                                <WidgetComponent
+                                    title={widget.name}
+                                    widgetId={widget.id}
+                                    size={size}
+                                    onSizeChange={handleSizeChange}
+                                    onClose={handleCloseWidget}
+                                >
+                                    <Suspense fallback={<div className="animate-pulse bg-white/5 h-full w-full rounded-lg"></div>}>
+                                        <WidgetContent />
+                                    </Suspense>
+                                </WidgetComponent>
+                            </div>
+                        )
+                    })}
+                </div>
+             ))}
+        </div>
+        
+        {/* Pagination Dots */}
+        {pages.length > 1 && !isFocusMode && (
+            <div className="flex justify-center space-x-3 mb-4 mt-2">
+                {pages.map((_, idx) => (
+                    <button
+                        key={idx}
+                        onClick={() => setCurrentPage(idx)}
+                        className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                            idx === currentPage ? 'bg-[var(--accent-color)] w-6' : 'bg-white/20 hover:bg-white/40'
+                        }`}
+                        aria-label={`Go to page ${idx + 1}`}
+                    />
+                ))}
+            </div>
         )}
+
       </div>
 
       {/* Footer Controls */}

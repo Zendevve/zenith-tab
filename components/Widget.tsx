@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { WidgetId } from '../types';
 import { ChevronLeftIcon, ChevronRightIcon, XIcon } from './icons';
@@ -16,7 +17,7 @@ const Widget: React.FC<WidgetProps> = ({ title, children, widgetId, size, onSize
   const MAX_SIZE = 3;
 
   return (
-    <div className="group/widget relative h-full flex flex-col transition-all duration-300 rounded-xl hover:bg-white/[0.03]">
+    <div className="group/widget relative h-full flex flex-col transition-all duration-300 rounded-xl hover:bg-white/[0.03] border border-transparent hover:border-white/5">
       
       {/* Minimalist Floating Controls (Visible on Hover) */}
       <div className="absolute top-2 right-2 flex items-center space-x-1 opacity-0 group-hover/widget:opacity-100 transition-opacity duration-200 z-10">
