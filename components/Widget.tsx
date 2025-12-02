@@ -1,29 +1,40 @@
 
 import React from 'react';
 import { WidgetId } from '../types';
-import { ChevronLeftIcon, ChevronRightIcon, XIcon } from './icons';
+import { ChevronLeftIcon, ChevronRightIcon, XIcon, MaximizeIcon, MinimizeIcon } from './icons';
 
 interface WidgetProps {
   title: string;
   children: React.ReactNode;
   widgetId?: WidgetId;
   size?: number;
+  isMaximized?: boolean;
   onSizeChange?: (id: WidgetId, newSize: number) => void;
   onClose?: (id: WidgetId) => void;
+  onToggleMaximize?: (id: WidgetId) => void;
 }
 
-const Widget: React.FC<WidgetProps> = ({ title, children, widgetId, size, onSizeChange, onClose }) => {
+const Widget: React.FC<WidgetProps> = ({ title, children, widgetId, size, isMaximized, onSizeChange, onClose, onToggleMaximize }) => {
   const MIN_SIZE = 1;
   const MAX_SIZE = 3;
 
   return (
-    <div className="group/widget relative w-full h-full flex flex-col transition-all duration-300 rounded-xl hover:bg-white/[0.03] border border-transparent hover:border-white/5 min-h-0">
+    <div className={`group/widget relative w-full h-full flex flex-col transition-all duration-300 rounded-xl hover:bg-white/[0.03] border border-transparent hover:border-white/5 min-h-0 ${isMaximized ? 'bg-[#0a0a0a]' : ''}`}>
       
       {/* Minimalist Floating Controls (Visible on Hover) */}
-      <div className="absolute top-2 right-2 flex items-center space-x-1 opacity-0 group-hover/widget:opacity-100 transition-opacity duration-200 z-10">
-        {(onSizeChange || onClose) && widgetId && (
+      <div className="absolute top-2 right-2 flex items-center space-x-1 opacity-0 group-hover/widget:opacity-100 transition-opacity duration-200 z-10 bg-[#0a0a0a]/80 backdrop-blur rounded px-1">
+        {(onSizeChange || onClose || onToggleMaximize) && widgetId && (
             <>
-                {onSizeChange && typeof size !== 'undefined' && (
+                {onToggleMaximize && (
+                  <button
+                    onClick={() => onToggleMaximize(widgetId)}
+                    className="p-1 text-white/40 hover:text-white transition-colors"
+                    aria-label={isMaximized ? "Minimize" : "Maximize"}
+                  >
+                    {isMaximized ? <MinimizeIcon className="w-3 h-3" /> : <MaximizeIcon className="w-3 h-3" />}
+                  </button>
+                )}
+                {!isMaximized && onSizeChange && typeof size !== 'undefined' && (
                     <>
                       <button
                           onClick={() => onSizeChange(widgetId, size - 1)}
@@ -31,7 +42,7 @@ const Widget: React.FC<WidgetProps> = ({ title, children, widgetId, size, onSize
                           className="p-1 text-white/40 hover:text-white disabled:opacity-0 transition-colors"
                           aria-label="Shrink"
                       >
-                          <ChevronLeftIcon className="w-4 h-4" />
+                          <ChevronLeftIcon className="w-3 h-3" />
                       </button>
                       <button
                           onClick={() => onSizeChange(widgetId, size + 1)}
@@ -39,17 +50,17 @@ const Widget: React.FC<WidgetProps> = ({ title, children, widgetId, size, onSize
                           className="p-1 text-white/40 hover:text-white disabled:opacity-0 transition-colors"
                           aria-label="Expand"
                       >
-                          <ChevronRightIcon className="w-4 h-4" />
+                          <ChevronRightIcon className="w-3 h-3" />
                       </button>
                     </>
                 )}
-                {onClose && (
+                {!isMaximized && onClose && (
                     <button
                         onClick={() => onClose(widgetId)}
-                        className="p-1 text-white/40 hover:text-red-400 transition-colors ml-2"
+                        className="p-1 text-white/40 hover:text-red-400 transition-colors ml-1"
                         aria-label="Close"
                     >
-                        <XIcon className="w-4 h-4" />
+                        <XIcon className="w-3 h-3" />
                     </button>
                 )}
             </>

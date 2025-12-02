@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { WidgetId, Widget, Quote, ThemeSettings } from './types';
 import { fetchInspirationalQuote } from './services/geminiService';
@@ -61,6 +61,7 @@ const App: React.FC = () => {
   const [isQuoteLoading, setIsQuoteLoading] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
+  const [maximizedWidgetId, setMaximizedWidgetId] = useState<WidgetId | null>(null);
   
   const [widgetOrder, setWidgetOrder] = useLocalStorage<WidgetId[]>('widget_order', ['search', 'links', 'quote', 'tasks', 'weather']);
   const [widgetSizes, setWidgetSizes] = useLocalStorage<Record<WidgetId, number>>('widget_sizes', { 
@@ -164,6 +165,11 @@ const App: React.FC = () => {
 
   const handleCloseWidget = (idToRemove: WidgetId) => {
       setWidgetOrder(prev => prev.filter(id => id !== idToRemove));
+      if (maximizedWidgetId === idToRemove) setMaximizedWidgetId(null);
+  };
+
+  const handleToggleMaximize = (id: WidgetId) => {
+      setMaximizedWidgetId(prev => prev === id ? null : id);
   };
 
   const handleDragStart = (e: React.DragEvent, widgetId: WidgetId) => {
@@ -200,7 +206,7 @@ const App: React.FC = () => {
     const handleWheel = (e: WheelEvent) => {
         // Only switch if not scrolling inside a widget (simple check)
         const target = e.target as HTMLElement;
-        if (target.closest('.overflow-y-auto')) return;
+        if (target.closest('.overflow-y-auto') || maximizedWidgetId) return;
 
         // Use a smaller threshold for better sensitivity on trackpads
         if (e.deltaY > 30) {
@@ -212,7 +218,7 @@ const App: React.FC = () => {
     
     window.addEventListener('wheel', handleWheel);
     return () => window.removeEventListener('wheel', handleWheel);
-  }, [pages.length]);
+  }, [pages.length, maximizedWidgetId]);
 
 
   return (
@@ -227,8 +233,8 @@ const App: React.FC = () => {
       
       <div className="relative z-10 w-full h-full flex flex-col p-6 md:p-8 lg:p-12 max-w-7xl mx-auto">
         
-        {/* Header Section */}
-        <header className={`flex-shrink-0 transition-all duration-700 mb-2 md:mb-6 ${isFocusMode ? 'opacity-20 blur-sm' : 'opacity-100'}`}>
+        {/* Header Section - hidden if widget is maximized */}
+        <header className={`flex-shrink-0 transition-all duration-700 mb-2 md:mb-6 ${isFocusMode || maximizedWidgetId ? 'opacity-0 pointer-events-none absolute' : 'opacity-100'}`}>
             <Greeting />
             <Clock clockFormat={clockFormat} />
             {widgetOrder.includes('quote') && (
@@ -236,8 +242,31 @@ const App: React.FC = () => {
             )}
         </header>
 
+        {/* Maximized Widget Overlay */}
+        {maximizedWidgetId && (
+            <div className="absolute inset-0 z-30 bg-[#0a0a0a] flex flex-col p-6 md:p-12 animate-fade-in">
+                {(() => {
+                    const widget = allWidgets.find(w => w.id === maximizedWidgetId);
+                    if (!widget) return null;
+                    const WidgetContent = widgetMap[widget.id];
+                    return (
+                        <WidgetComponent
+                            title={widget.name}
+                            widgetId={widget.id}
+                            isMaximized={true}
+                            onToggleMaximize={handleToggleMaximize}
+                        >
+                             <Suspense fallback={<div className="animate-pulse bg-white/5 h-full w-full rounded-lg"></div>}>
+                                <WidgetContent />
+                             </Suspense>
+                        </WidgetComponent>
+                    );
+                })()}
+            </div>
+        )}
+
         {/* Paginated Grid Area */}
-        <div className={`flex-grow relative w-full transition-opacity duration-500 min-h-0 ${isFocusMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+        <div className={`flex-grow relative w-full transition-opacity duration-500 min-h-0 ${isFocusMode || maximizedWidgetId ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
              {pages.map((pageWidgets, pageIndex) => (
                 <div 
                     key={pageIndex}
@@ -248,8 +277,6 @@ const App: React.FC = () => {
                                 ? 'opacity-0 -translate-x-10 pointer-events-none' 
                                 : 'opacity-0 translate-x-10 pointer-events-none'
                     } grid-rows-3 lg:grid-rows-2`}
-                    // We removed the inline grid-template-rows logic in favor of Tailwind classes to ensure 
-                    // items stretch/shrink to fit exactly in the container height.
                 >
                     {pageWidgets.map((widget) => {
                         const WidgetContent = widgetMap[widget.id];
@@ -275,6 +302,7 @@ const App: React.FC = () => {
                                     size={size}
                                     onSizeChange={handleSizeChange}
                                     onClose={handleCloseWidget}
+                                    onToggleMaximize={handleToggleMaximize}
                                 >
                                     <Suspense fallback={<div className="animate-pulse bg-white/5 h-full w-full rounded-lg"></div>}>
                                         <WidgetContent />
@@ -288,7 +316,7 @@ const App: React.FC = () => {
         </div>
         
         {/* Pagination Dots */}
-        {pages.length > 1 && !isFocusMode && (
+        {pages.length > 1 && !isFocusMode && !maximizedWidgetId && (
             <div className="flex-shrink-0 flex justify-center space-x-3 mb-2 mt-4">
                 {pages.map((_, idx) => (
                     <button
@@ -306,22 +334,24 @@ const App: React.FC = () => {
       </div>
 
       {/* Footer Controls */}
-      <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 flex gap-4 z-50 opacity-40 hover:opacity-100 transition-opacity duration-300">
-            <button
-            onClick={() => setIsFocusMode(prev => !prev)}
-            className="p-2 hover:text-[var(--accent-color)] transition-colors"
-            title="Focus Mode"
-            >
-             <ZenIcon className="w-5 h-5" />
-            </button>
-            <button
-            onClick={() => setIsSettingsOpen(true)}
-            className="p-2 hover:text-[var(--accent-color)] transition-colors"
-            title="Settings"
-            >
-            <SettingsIcon className="w-5 h-5" />
-            </button>
-      </div>
+      {!maximizedWidgetId && (
+          <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 flex gap-4 z-50 opacity-40 hover:opacity-100 transition-opacity duration-300">
+                <button
+                onClick={() => setIsFocusMode(prev => !prev)}
+                className="p-2 hover:text-[var(--accent-color)] transition-colors"
+                title="Zen Mode"
+                >
+                 <ZenIcon className="w-5 h-5" />
+                </button>
+                <button
+                onClick={() => setIsSettingsOpen(true)}
+                className="p-2 hover:text-[var(--accent-color)] transition-colors"
+                title="Settings"
+                >
+                <SettingsIcon className="w-5 h-5" />
+                </button>
+          </div>
+      )}
 
       <SettingsPanel
         isOpen={isSettingsOpen}

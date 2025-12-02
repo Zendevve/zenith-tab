@@ -77,3 +77,13 @@ export const EditIcon: React.FC<{className?: string}> = ({ className }) => (
     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
   </svg>
 );
+export const MaximizeIcon: React.FC<{className?: string}> = ({ className }) => (
+  <svg {...iconProps} className={className || iconProps.className}>
+    <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+  </svg>
+);
+export const MinimizeIcon: React.FC<{className?: string}> = ({ className }) => (
+  <svg {...iconProps} className={className || iconProps.className}>
+    <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M10 14l-7 7" />
+  </svg>
+);
