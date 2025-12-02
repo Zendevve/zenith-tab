@@ -1,5 +1,5 @@
-
 import React, { useState } from 'react';
+import { SearchIcon } from './icons';
 
 const SearchWidget: React.FC = () => {
   const [query, setQuery] = useState('');
@@ -11,19 +11,16 @@ const SearchWidget: React.FC = () => {
   };
 
   return (
-    <div className="h-full flex flex-col justify-center">
-      <form onSubmit={handleSearch} className="w-full">
-        <label className="text-xs font-bold text-[var(--accent-color)] block mb-1">SEARCH_QUERY::</label>
-        <div className="flex">
-            <span className="bg-[var(--fg-color)] text-[var(--bg-color)] px-3 py-2 font-bold">{'>'}</span>
-            <input
+    <div className="h-full flex flex-col justify-center px-4">
+      <form onSubmit={handleSearch} className="w-full relative group">
+        <SearchIcon className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-[var(--accent-color)] transition-colors" />
+        <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full bg-transparent border-2 border-[var(--fg-color)] border-l-0 px-4 py-2 text-[var(--fg-color)] focus:outline-none focus:bg-[var(--border-color)] font-bold placeholder-neutral-700"
-            placeholder="..."
-            />
-        </div>
+            className="w-full bg-transparent border-b border-white/10 py-2 pl-8 text-lg font-light text-white focus:outline-none focus:border-[var(--accent-color)] placeholder-white/20 transition-colors"
+            placeholder="Search..."
+        />
       </form>
     </div>
   );

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { WidgetId, Widget, Quote, ThemeSettings } from './types';
@@ -18,13 +17,13 @@ const LinksWidget = lazy(() => import('./components/LinksWidget'));
 const SearchWidget = lazy(() => import('./components/SearchWidget'));
 
 const allWidgets: Widget[] = [
-  { id: 'search', name: 'Search_Mod' },
-  { id: 'links', name: 'Quick_Links' },
-  { id: 'tasks', name: 'Task_Mgr' },
-  { id: 'notes', name: 'Notes_Log' },
-  { id: 'weather', name: 'Env_Data' },
-  { id: 'ai_assistant', name: 'AI_Core' },
-  { id: 'quote', name: 'Motd' },
+  { id: 'search', name: 'Search' },
+  { id: 'links', name: 'Links' },
+  { id: 'tasks', name: 'Tasks' },
+  { id: 'notes', name: 'Notes' },
+  { id: 'weather', name: 'Weather' },
+  { id: 'ai_assistant', name: 'Assistant' },
+  { id: 'quote', name: 'Quote' },
 ];
 
 const widgetMap: Record<WidgetId, React.LazyExoticComponent<React.FC<{}>>> = {
@@ -54,7 +53,7 @@ const App: React.FC = () => {
       search: 2 
   });
   const [clockFormat, setClockFormat] = useLocalStorage<'12h' | '24h'>('clock_format', '24h');
-  const [themeSettings, setThemeSettings] = useLocalStorage<ThemeSettings>('theme_settings', { accentColor: '#00FF00', gridVisible: true });
+  const [themeSettings, setThemeSettings] = useLocalStorage<ThemeSettings>('theme_settings', { accentColor: '#ffffff', gridVisible: true });
   
   const [draggedWidgetId, setDraggedWidgetId] = useState<WidgetId | null>(null);
 
@@ -126,16 +125,15 @@ const App: React.FC = () => {
         className="relative w-screen h-screen overflow-hidden transition-none"
         style={{ 
           '--accent-color': themeSettings.accentColor,
-          '--fg-color': '#f0f0f0',
-          '--bg-color': '#050505',
-          '--border-color': '#333333'
+          '--fg-color': '#e5e5e5',
+          '--bg-color': '#0a0a0a',
         } as React.CSSProperties}
     >
       
-      <div className="relative z-10 w-full h-full flex flex-col p-4 md:p-8 overflow-hidden">
+      <div className="relative z-10 w-full h-full flex flex-col p-6 md:p-12 overflow-hidden max-w-7xl mx-auto">
         
         {/* Header Section */}
-        <header className={`flex-shrink-0 transition-all duration-300 ${isFocusMode ? 'opacity-20 blur-sm' : 'opacity-100'}`}>
+        <header className={`flex-shrink-0 transition-all duration-700 ${isFocusMode ? 'opacity-20 blur-sm' : 'opacity-100'}`}>
             <Greeting />
             <Clock clockFormat={clockFormat} />
             {widgetOrder.includes('quote') && (
@@ -143,10 +141,10 @@ const App: React.FC = () => {
             )}
         </header>
 
-        {/* Brutalist Grid */}
+        {/* Minimal Grid */}
         {activeGridWidgets.length > 0 && (
           <div 
-            className={`w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-20 flex-grow transition-opacity duration-200 ${isFocusMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`} 
+            className={`w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-20 flex-grow transition-opacity duration-500 ${isFocusMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`} 
             style={{ overflowY: 'auto' }}
           >
             {activeGridWidgets.map((widget) => {
@@ -165,7 +163,7 @@ const App: React.FC = () => {
                         onDragStart={(e) => handleDragStart(e, widget.id)}
                         onDragOver={handleDragOver}
                         onDrop={(e) => handleDrop(e, widget.id)}
-                        className={`${colSpanClass} h-full min-h-[200px]`}
+                        className={`${colSpanClass} h-full min-h-[160px]`}
                     >
                         <WidgetComponent
                             title={widget.name}
@@ -174,7 +172,7 @@ const App: React.FC = () => {
                             onSizeChange={handleSizeChange}
                             onClose={handleCloseWidget}
                         >
-                            <Suspense fallback={<div className="animate-pulse bg-[var(--border-color)] h-full w-full"></div>}>
+                            <Suspense fallback={<div className="animate-pulse bg-white/5 h-full w-full rounded-lg"></div>}>
                                 <WidgetContent />
                             </Suspense>
                         </WidgetComponent>
@@ -186,22 +184,21 @@ const App: React.FC = () => {
       </div>
 
       {/* Footer Controls */}
-      <div className="fixed bottom-0 left-0 w-full border-t-2 border-[var(--border-color)] bg-[var(--bg-color)] flex justify-between p-2 z-50">
-        <div className="text-[var(--accent-color)] font-bold text-xs self-center px-4">SYS::READY</div>
-        <div className="flex gap-2">
+      <div className="fixed bottom-6 right-6 flex gap-4 z-50 opacity-20 hover:opacity-100 transition-opacity duration-300">
             <button
             onClick={() => setIsFocusMode(prev => !prev)}
-            className={`h-10 px-4 border-2 border-[var(--fg-color)] hover:bg-[var(--fg-color)] hover:text-[var(--bg-color)] font-bold uppercase text-xs flex items-center gap-2`}
+            className="p-2 hover:text-[var(--accent-color)] transition-colors"
+            title="Focus Mode"
             >
-             <ZenIcon className="w-4 h-4" /> {isFocusMode ? 'EXIT_ZEN' : 'ZEN_MODE'}
+             <ZenIcon className="w-5 h-5" />
             </button>
             <button
             onClick={() => setIsSettingsOpen(true)}
-            className="h-10 w-10 flex items-center justify-center border-2 border-[var(--fg-color)] hover:bg-[var(--accent-color)] hover:border-[var(--accent-color)] hover:text-black transition-colors"
+            className="p-2 hover:text-[var(--accent-color)] transition-colors"
+            title="Settings"
             >
             <SettingsIcon className="w-5 h-5" />
             </button>
-        </div>
       </div>
 
       <SettingsPanel

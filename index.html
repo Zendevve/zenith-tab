@@ -3,40 +3,39 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TERMINAL_TAB</title>
+    <title>Zenith</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@100;400;600;700&family=Roboto+Mono:wght@100..700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&display=swap" rel="stylesheet">
     <style>
       :root {
-        --bg-color: #050505;
-        --fg-color: #f0f0f0;
-        --border-color: #333333;
+        --bg-color: #0a0a0a;
+        --fg-color: #e5e5e5;
+        --accent-color: #ffffff;
       }
       
       body {
         background-color: var(--bg-color);
         color: var(--fg-color);
-        font-family: 'Roboto Mono', monospace;
+        font-family: 'Inter', sans-serif;
         -webkit-font-smoothing: antialiased;
+        overflow: hidden; /* App handles scrolling */
       }
 
-      /* Brutalist Scrollbar */
+      /* Minimal Scrollbar - Hidden by default, small on interaction if needed */
       ::-webkit-scrollbar {
-        width: 12px;
-        background: var(--bg-color);
-        border-left: 1px solid var(--border-color);
+        width: 6px;
+        background: transparent;
       }
       ::-webkit-scrollbar-thumb {
-        background: var(--border-color);
-        border: 2px solid var(--bg-color);
+        background: rgba(255,255,255,0.1);
+        border-radius: 3px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: var(--fg-color);
+        background: rgba(255,255,255,0.2);
       }
 
-      /* Utility for hiding scrollbar but keeping function */
       .scrollbar-hide::-webkit-scrollbar {
         display: none;
       }
@@ -45,21 +44,15 @@
         scrollbar-width: none;
       }
 
-      /* Hard transitions */
-      .brutal-transition {
+      /* Soft transitions */
+      .transition-all {
         transition-property: all;
-        transition-timing-function: steps(2, start);
-        transition-duration: 0.1s;
-      }
-      
-      .invert-hover:hover {
-        background-color: var(--fg-color);
-        color: var(--bg-color);
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 300ms;
       }
 
       input::placeholder {
-        color: #555;
-        text-transform: uppercase;
+        color: rgba(255,255,255,0.2);
       }
     </style>
   <script type="importmap">

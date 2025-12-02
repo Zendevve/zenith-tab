@@ -1,7 +1,18 @@
-
 import React, { useState, useEffect } from 'react';
 import { fetchWeatherData } from '../services/weatherService';
 import { WeatherData } from '../types';
+import { SunIcon, CloudIcon, RainIcon, SnowIcon, WindIcon, StormIcon, PartlyCloudyIcon, FogIcon } from './icons';
+
+const iconMap: Record<string, React.FC<{ className?: string }>> = {
+  'sun': SunIcon,
+  'cloud': CloudIcon,
+  'rain': RainIcon,
+  'snow': SnowIcon,
+  'wind': WindIcon,
+  'storm': StormIcon,
+  'partly-cloudy': PartlyCloudyIcon,
+  'fog': FogIcon
+};
 
 const WeatherWidget: React.FC = () => {
   const [weather, setWeather] = useState<WeatherData | null>(null);
@@ -12,25 +23,17 @@ const WeatherWidget: React.FC = () => {
     fetchWeatherData().then(setWeather).catch(e => setError(e.message)).finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="animate-pulse">LOADING_WEATHER_DATA...</div>;
-  if (error) return <div className="text-red-500">ERR: {error}</div>;
+  if (loading) return <div className="h-full flex items-center justify-center text-xs text-white/30 animate-pulse">Loading...</div>;
+  if (error) return <div className="h-full flex items-center justify-center text-xs text-red-400/50">Weather Unavailable</div>;
 
   if (weather) {
+    const Icon = iconMap[weather.icon] || SunIcon;
     return (
-      <div className="flex flex-col justify-between h-full font-mono uppercase">
-        <div className="border-b border-[var(--border-color)] pb-2 mb-2">
-            <span className="text-[var(--accent-color)] text-sm">LOC::</span> {weather.location}
-        </div>
-        
-        <div className="flex-grow flex flex-col justify-center items-center">
-            <div className="text-6xl font-bold">{Math.round(weather.temperature)}°</div>
-            <div className="text-xl mt-2 border px-2 border-[var(--fg-color)]">{weather.description}</div>
-        </div>
-
-        <div className="border-t border-[var(--border-color)] pt-2 mt-2 flex justify-between text-xs text-neutral-500">
-            <span>ICON: {weather.icon.toUpperCase()}</span>
-            <span>LAT/LON REQ OK</span>
-        </div>
+      <div className="flex flex-col items-center justify-center h-full text-center">
+        <Icon className="w-12 h-12 text-white/80 mb-4 stroke-1" />
+        <div className="text-4xl font-light text-white tracking-tight">{Math.round(weather.temperature)}°</div>
+        <div className="text-xs font-light text-white/40 mt-2 uppercase tracking-wider">{weather.location}</div>
+        <div className="text-xs text-white/20 mt-1 capitalize">{weather.description}</div>
       </div>
     );
   }

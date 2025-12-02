@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { fetchComplexResponse } from '../services/geminiService';
 import { LightbulbIcon } from './icons';
@@ -39,38 +38,30 @@ const AIAssistantWidget: React.FC = () => {
     <div className="flex flex-col h-full">
       <div ref={responseContainerRef} className="flex-grow overflow-y-auto mb-4 pr-2 text-sm space-y-4 scrollbar-hide">
         {!isLoading && !response && !error && (
-            <div className="flex flex-col items-center justify-center h-full text-center text-white/30 p-4 animate-fadeIn">
-                <LightbulbIcon className="w-8 h-8 mb-4 opacity-50" />
-                <h3 className="font-bold text-white/60 uppercase tracking-widest text-xs mb-2">Zenith AI</h3>
-                <p className="font-light leading-relaxed">Ask, brainstorm, or solve.</p>
+            <div className="flex flex-col items-center justify-center h-full text-center text-white/30">
+                <LightbulbIcon className="w-6 h-6 mb-3 opacity-30 stroke-1" />
+                <p className="font-light text-xs">How can I help?</p>
             </div>
         )}
         {isLoading && (
           <div className="flex items-center space-x-2 text-white/40 h-full justify-center">
-            <div className="w-1.5 h-1.5 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
-            <div className="w-1.5 h-1.5 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>
-            <div className="w-1.5 h-1.5 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
+            <div className="w-1 h-1 bg-white/60 rounded-full animate-pulse"></div>
+            <div className="w-1 h-1 bg-white/60 rounded-full animate-pulse delay-75"></div>
+            <div className="w-1 h-1 bg-white/60 rounded-full animate-pulse delay-150"></div>
           </div>
         )}
-        {error && <pre className="text-red-400/80 whitespace-pre-wrap font-sans text-xs leading-relaxed">{error}</pre>}
-        {response && <pre className="text-white/80 whitespace-pre-wrap font-sans font-light leading-relaxed animate-fadeIn">{response}</pre>}
+        {error && <p className="text-red-400/80 text-xs font-light">{error}</p>}
+        {response && <p className="text-white/80 font-light text-sm leading-relaxed whitespace-pre-wrap">{response}</p>}
       </div>
-      <form onSubmit={handleSubmit} className="flex items-center relative group">
+      <form onSubmit={handleSubmit} className="flex items-center relative">
         <input
           type="text"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Ask anything..."
+          placeholder="Ask AI..."
           disabled={isLoading}
-          className="w-full bg-white/5 rounded-full px-4 py-2.5 text-sm font-light focus:outline-none focus:bg-white/10 focus:ring-1 focus:ring-white/20 placeholder-white/20 transition-all duration-300 disabled:opacity-50"
+          className="w-full bg-transparent border-b border-white/10 py-2 text-sm font-light focus:outline-none focus:border-white/40 placeholder-white/20 transition-colors"
         />
-        <button
-          type="submit"
-          disabled={isLoading || !prompt.trim()}
-          className="absolute right-1 p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-all disabled:opacity-0 disabled:scale-90"
-        >
-          <svg className="w-4 h-4 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19V5M5 12l7-7 7 7"></path></svg>
-        </button>
       </form>
     </div>
   );
