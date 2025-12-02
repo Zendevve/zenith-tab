@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 
 interface ClockProps {
@@ -31,13 +32,13 @@ const Clock: React.FC<ClockProps> = ({ clockFormat }) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center w-full py-12 select-none">
+    <div className="flex flex-col items-center justify-center w-full py-8 md:py-12 select-none">
         <div 
-            className="text-8xl md:text-9xl font-light tracking-tight text-[var(--fg-color)] leading-none opacity-90"
+            className="text-6xl md:text-8xl lg:text-9xl font-light tracking-tight text-[var(--fg-color)] leading-none opacity-90 transition-all duration-300"
         >
         {formatTime(time)}
         </div>
-        <div className="text-sm md:text-base font-light tracking-[0.2em] uppercase text-white/40 mt-4">
+        <div className="text-xs md:text-sm font-light tracking-[0.2em] uppercase text-white/40 mt-4">
             {formatDate(time)}
         </div>
     </div>

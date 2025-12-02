@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { WidgetId, Widget, Quote, ThemeSettings } from './types';
@@ -130,7 +131,7 @@ const App: React.FC = () => {
         } as React.CSSProperties}
     >
       
-      <div className="relative z-10 w-full h-full flex flex-col p-6 md:p-12 overflow-hidden max-w-7xl mx-auto">
+      <div className="relative z-10 w-full h-full flex flex-col p-4 md:p-12 overflow-hidden max-w-7xl mx-auto">
         
         {/* Header Section */}
         <header className={`flex-shrink-0 transition-all duration-700 ${isFocusMode ? 'opacity-20 blur-sm' : 'opacity-100'}`}>
@@ -144,7 +145,7 @@ const App: React.FC = () => {
         {/* Minimal Grid */}
         {activeGridWidgets.length > 0 && (
           <div 
-            className={`w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-20 flex-grow transition-opacity duration-500 ${isFocusMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`} 
+            className={`w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 pb-20 flex-grow transition-opacity duration-500 ${isFocusMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`} 
             style={{ overflowY: 'auto' }}
           >
             {activeGridWidgets.map((widget) => {
@@ -184,7 +185,7 @@ const App: React.FC = () => {
       </div>
 
       {/* Footer Controls */}
-      <div className="fixed bottom-6 right-6 flex gap-4 z-50 opacity-20 hover:opacity-100 transition-opacity duration-300">
+      <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 flex gap-4 z-50 opacity-40 hover:opacity-100 transition-opacity duration-300">
             <button
             onClick={() => setIsFocusMode(prev => !prev)}
             className="p-2 hover:text-[var(--accent-color)] transition-colors"
